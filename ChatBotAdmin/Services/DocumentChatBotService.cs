@@ -29,6 +29,21 @@ public class DocumentChatBotService(
                 .Include(x => x.Chunks)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
+    public async Task DeleteAsync(Guid id)
+    {
+        var record = await db.DocumentChatBots.FindAsync(id);
+        if (record is null) return;
+
+        // Delete the uploaded file from disk
+        var filePath = Path.Combine(UploadsRoot, record.StoredFilePath);
+        if (File.Exists(filePath))
+            File.Delete(filePath);
+
+        // Cascade delete removes chunks via EF (OnDelete: Cascade configured in DbContext)
+        db.DocumentChatBots.Remove(record);
+        await db.SaveChangesAsync();
+    }
+
     // ---------------------------------------------------------------
     // Create  (mirrors Python: chunk_docx → build_index pipeline)
     // ---------------------------------------------------------------
