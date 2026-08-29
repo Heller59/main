@@ -1,0 +1,18 @@
+[
+  {
+    "question": "How do I create a new order?",
+    "should_mention": ["Orders", "New Order", "Draft"]
+  },
+  {
+    "question": "What role is needed to skip order review?",
+    "should_mention": ["Admin"]
+  },
+  {
+    "question": "My order has been in review for 3 days, what do I do?",
+    "should_mention": ["Approver", "Team Settings"]
+  },
+  {
+    "question": "How do I delete my account?",
+    "should_mention": ["support"]
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "getting-started.docx::Getting Started with Acme Widgets::0",
+    "source_file": "getting-started.docx",
+    "heading": "Getting Started with Acme Widgets",
+    "version": "v1.0",
+    "text": "Getting Started with Acme Widgets: Acme Widgets is a platform for managing customer orders. This guide covers account setup, creating your first order, and common troubleshooting steps.",
+    "images": []
+  },
+  {
+    "id": "getting-started.docx::Creating an Account::0",
+    "source_file": "getting-started.docx",
+    "heading": "Creating an Account",
+    "version": "v1.0",
+    "text": "Creating an Account: To create an account, click the \\\"Sign Up\\\" button in the top right corner of the site. You will need a valid email address and company name. After signing up, check your email for a verification link. Accounts must be verified within 24 hours or the signup will expire.",
+    "images": []
+  },
+  {
+    "id": "getting-started.docx::Creating Your First Order::0",
+    "source_file": "getting-started.docx",
+    "heading": "Creating Your First Order",
+    "version": "v1.0",
+    "text": "Creating Your First Order: Once logged in, navigate to the Orders tab and click \\\"New Order\\\". Select a customer from the dropdown, add one or more line items, and click Submit as shown below. Orders in \\\"Draft\\\" status can be edited freely. Once submitted, an order moves to \\\"Pending Review\\\" and can only be edited by users with the Approver role.",
+    "images": [
+      "media\\v1.0/media/image1.png"
+    ]
+  },
+  {
+    "id": "getting-started.docx::Order Statuses::0",
+    "source_file": "getting-started.docx",
+    "heading": "Order Statuses",
+    "version": "v1.0",
+    "text": "Order Statuses: Orders move through the following statuses: Draft, Pending Review, Approved, Shipped, and Completed. Only Admin users can move an order directly from Draft to Approved, skipping review.",
+    "images": []
+  },
+  {
+    "id": "getting-started.docx::Troubleshooting::0",
+    "source_file": "getting-started.docx",
+    "heading": "Troubleshooting",
+    "version": "v1.0",
+    "text": "Troubleshooting: If an order is stuck in Pending Review for more than 48 hours, contact your account\\'s designated Approver. If you do not know who your Approver is, check the Team Settings page under Roles and Permissions.",
+    "images": []
+  }
+]

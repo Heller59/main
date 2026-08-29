@@ -1,0 +1,117 @@
+<!--
+widget.html
+
+Standalone preview of the lightweight chat widget. In production this
+becomes a small <script src="..."></script> your ASP.NET MVC pages embed,
+pointed at whichever backend URL/version the page needs -- the widget
+itself doesn't care what serves the API.
+
+Open this file directly in a browser while server.py is running locally
+to try it end-to-end.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Doc Chatbot Widget Preview</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; padding: 40px; }
+  #chatbox { max-width: 480px; margin: 0 auto; background: white; border-radius: 12px;
+             box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+  #header { background: #2E74B5; color: white; padding: 14px 18px; font-weight: 600; }
+  #messages { padding: 16px; height: 420px; overflow-y: auto; }
+  .msg { margin-bottom: 16px; }
+  .msg.user { text-align: right; }
+  .bubble { display: inline-block; padding: 10px 14px; border-radius: 10px; max-width: 85%; text-align: left; }
+  .msg.user .bubble { background: #2E74B5; color: white; }
+  .msg.bot .bubble { background: #eef0f3; color: #222; }
+  .msg img { display: block; margin-top: 8px; max-width: 100%; border-radius: 6px; border: 1px solid #ddd; }
+  .sources { font-size: 11px; color: #888; margin-top: 4px; }
+  #inputRow { display: flex; border-top: 1px solid #eee; }
+  #questionInput { flex: 1; border: none; padding: 12px; font-size: 14px; outline: none; }
+  #sendBtn { border: none; background: #2E74B5; color: white; padding: 0 18px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="chatbox">
+  <div id="header">Acme Widgets Help</div>
+  <div id="messages"></div>
+  <div id="inputRow">
+    <input id="questionInput" placeholder="Ask a question about the docs..." />
+    <button id="sendBtn">Send</button>
+  </div>
+</div>
+
+<script>
+// In production: configure this per page/version, e.g. via a data attribute
+// on the <script> tag that loads this widget.
+const API_URL = "http://localhost:5000/chat";
+const DOC_VERSION = "v1.0";
+const USER_ROLE = "user"; // wire this up to your app's real session/role later
+
+const messagesEl = document.getElementById("messages");
+const inputEl = document.getElementById("questionInput");
+const sendBtn = document.getElementById("sendBtn");
+
+function addMessage(text, sender, images, sources) {
+  const msg = document.createElement("div");
+  msg.className = "msg " + sender;
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = text;
+  msg.appendChild(bubble);
+
+  if (images && images.length) {
+    images.forEach((src) => {
+      const img = document.createElement("img");
+      img.src = "http://localhost:5000" + src;
+      msg.appendChild(img);
+    });
+  }
+
+  if (sources && sources.length) {
+    const src = document.createElement("div");
+    src.className = "sources";
+    src.textContent = "Source: " + sources.join(", ");
+    msg.appendChild(src);
+  }
+
+  messagesEl.appendChild(msg);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+async function sendQuestion() {
+  const question = inputEl.value.trim();
+  if (!question) return;
+
+  addMessage(question, "user");
+  inputEl.value = "";
+
+  const thinking = document.createElement("div");
+  thinking.className = "msg bot";
+  thinking.innerHTML = '<div class="bubble">...</div>';
+  messagesEl.appendChild(thinking);
+
+  try {
+    const resp = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, version: DOC_VERSION, role: USER_ROLE }),
+    });
+    const data = await resp.json();
+    thinking.remove();
+    addMessage(data.answer, "bot", data.images, data.sources);
+  } catch (err) {
+    thinking.remove();
+    addMessage("Sorry, something went wrong reaching the assistant.", "bot");
+  }
+}
+
+sendBtn.addEventListener("click", sendQuestion);
+inputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") sendQuestion(); });
+</script>
+
+</body>
+</html>
