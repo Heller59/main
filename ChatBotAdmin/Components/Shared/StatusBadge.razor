@@ -1,0 +1,16 @@
+@using ChatBotAdmin.Models
+
+<span class="badge @CssClass">@Status</span>
+
+@code {
+    [Parameter, EditorRequired] public ProcessingStatus Status { get; set; }
+
+    private string CssClass => Status switch
+    {
+        ProcessingStatus.Ready      => "bg-success",
+        ProcessingStatus.Processing => "bg-warning text-dark",
+        ProcessingStatus.Pending    => "bg-secondary",
+        ProcessingStatus.Error      => "bg-danger",
+        _                           => "bg-secondary"
+    };
+}

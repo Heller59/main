@@ -1,0 +1,162 @@
+@page "/chatbots/create"
+@using ChatBotAdmin.Services
+@inject DocumentChatBotService Svc
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>New Document ChatBot – ChatBot Admin</PageTitle>
+
+<h1 class="h3 mb-4">New Document ChatBot</h1>
+
+<div class="row">
+    <div class="col-lg-7">
+        <EditForm Model="@model" OnValidSubmit="HandleSubmit" FormName="CreateChatBot">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Name</label>
+                <InputText @bind-Value="model.Name" class="form-control" placeholder="e.g. Employee Handbook" />
+                <ValidationMessage For="() => model.Name" class="text-danger small" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Version</label>
+                <InputText @bind-Value="model.Version" class="form-control" placeholder="e.g. V1.0" />
+                <ValidationMessage For="() => model.Version" class="text-danger small" />
+                <div class="form-text">If you need to revise, create a new version rather than editing this one.</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Word Document (.docx)</label>
+                <InputFile OnChange="HandleFileSelected" class="form-control" accept=".docx" />
+                @if (!string.IsNullOrEmpty(selectedFileName))
+                {
+                    <div class="form-text text-success">Selected: @selectedFileName</div>
+                }
+                @if (!string.IsNullOrEmpty(fileError))
+                {
+                    <div class="text-danger small">@fileError</div>
+                }
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Model Instructions</label>
+                <InputTextArea @bind-Value="model.Instructions" class="form-control" rows="5"
+                               placeholder="Describe how the model should read and respond using this document…" />
+                <ValidationMessage For="() => model.Instructions" class="text-danger small" />
+                <div class="form-text">These instructions are sent to the AI model along with the document content.</div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(submitError))
+            {
+                <div class="alert alert-danger">@submitError</div>
+            }
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@busy">
+                    @if (busy)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        <span>Processing…</span>
+                    }
+                    else
+                    {
+                        <span>Create ChatBot</span>
+                    }
+                </button>
+                <a href="/chatbots" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </EditForm>
+    </div>
+
+    <div class="col-lg-4 offset-lg-1 mt-4 mt-lg-0">
+        <div class="card bg-light border-0">
+            <div class="card-body">
+                <h6 class="card-title">How this works</h6>
+                <ol class="small text-muted ps-3 mb-0">
+                    <li class="mb-2">Upload a Word document (.docx).</li>
+                    <li class="mb-2">Give it a version label so you can track iterations.</li>
+                    <li class="mb-2">Write instructions that tell the AI how to interpret the document.</li>
+                    <li class="mb-2">The document is processed and saved. Your ChatBot ID is generated and ready to embed.</li>
+                    <li>To make changes, create a new version — existing versions are read-only.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly CreateModel model = new();
+    private IBrowserFile? selectedFile;
+    private string selectedFileName = string.Empty;
+    private string fileError = string.Empty;
+    private string submitError = string.Empty;
+    private bool busy;
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        fileError = string.Empty;
+        var file = e.File;
+
+        if (!file.Name.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
+        {
+            fileError = "Only .docx files are supported.";
+            selectedFile = null;
+            selectedFileName = string.Empty;
+            return;
+        }
+
+        if (file.Size > 50 * 1024 * 1024) // 50 MB
+        {
+            fileError = "File must be 50 MB or smaller.";
+            selectedFile = null;
+            selectedFileName = string.Empty;
+            return;
+        }
+
+        selectedFile = file;
+        selectedFileName = file.Name;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (selectedFile is null)
+        {
+            fileError = "Please select a Word document.";
+            return;
+        }
+
+        busy = true;
+        submitError = string.Empty;
+
+        try
+        {
+            await using var stream = selectedFile.OpenReadStream(maxAllowedSize: 50 * 1024 * 1024);
+            var bot = await Svc.CreateAsync(
+                model.Name,
+                model.Version,
+                model.Instructions,
+                stream,
+                selectedFile.Name);
+
+            Nav.NavigateTo($"/chatbots/{bot.Id}");
+        }
+        catch (Exception ex)
+        {
+            submitError = $"An error occurred: {ex.Message}";
+            busy = false;
+        }
+    }
+
+    private sealed class CreateModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Name { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Version { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Instructions { get; set; } = string.Empty;
+    }
+}

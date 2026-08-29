@@ -1,0 +1,105 @@
+@page "/"
+@using ChatBotAdmin.Data
+@using ChatBotAdmin.Models
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+
+<PageTitle>Dashboard – ChatBot Admin</PageTitle>
+
+<h1 class="mb-4">Dashboard</h1>
+
+<div class="row g-3 mb-5">
+    <div class="col-sm-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-primary">@total</div>
+                <div class="text-muted small mt-1">Total ChatBots</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-success">@ready</div>
+                <div class="text-muted small mt-1">Ready</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-warning">@pending</div>
+                <div class="text-muted small mt-1">Processing</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="display-6 fw-bold text-danger">@errors</div>
+                <div class="text-muted small mt-1">Errors</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 mb-0">Recent ChatBots</h2>
+    <a href="/chatbots/create" class="btn btn-primary btn-sm">+ New ChatBot</a>
+</div>
+
+@if (recent is null)
+{
+    <p class="text-muted">Loading…</p>
+}
+else if (recent.Count == 0)
+{
+    <p class="text-muted">No ChatBots created yet. <a href="/chatbots/create">Create your first one.</a></p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Version</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var bot in recent)
+                {
+                    <tr>
+                        <td>@bot.Name</td>
+                        <td><span class="badge bg-secondary">@bot.Version</span></td>
+                        <td><StatusBadge Status="@bot.Status" /></td>
+                        <td class="text-muted small">@bot.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</td>
+                        <td><a href="/chatbots/@bot.Id" class="btn btn-outline-secondary btn-sm">View</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (total > 5)
+    {
+        <a href="/chatbots" class="btn btn-link p-0">View all @total →</a>
+    }
+}
+
+@code {
+    private List<DocumentChatBot>? recent;
+    private int total, ready, pending, errors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await Db.DocumentChatBots.OrderByDescending(x => x.CreatedAt).ToListAsync();
+        total   = all.Count;
+        ready   = all.Count(x => x.Status == ProcessingStatus.Ready);
+        pending = all.Count(x => x.Status is ProcessingStatus.Pending or ProcessingStatus.Processing);
+        errors  = all.Count(x => x.Status == ProcessingStatus.Error);
+        recent  = all.Take(5).ToList();
+    }
+}

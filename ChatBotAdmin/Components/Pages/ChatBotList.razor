@@ -1,0 +1,63 @@
+@page "/chatbots"
+@using ChatBotAdmin.Models
+@using ChatBotAdmin.Services
+@inject DocumentChatBotService Svc
+@inject NavigationManager Nav
+
+<PageTitle>Document ChatBots – ChatBot Admin</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Document ChatBots</h1>
+    <a href="/chatbots/create" class="btn btn-primary">+ New ChatBot</a>
+</div>
+
+@if (bots is null)
+{
+    <p class="text-muted">Loading…</p>
+}
+else if (bots.Count == 0)
+{
+    <div class="text-center py-5 text-muted">
+        <p>No ChatBots yet.</p>
+        <a href="/chatbots/create" class="btn btn-primary">Create your first one</a>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Version</th>
+                    <th>Document</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>ID</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var bot in bots)
+                {
+                    <tr>
+                        <td class="fw-semibold">@bot.Name</td>
+                        <td><span class="badge bg-secondary">@bot.Version</span></td>
+                        <td class="text-muted small">@bot.DocumentFileName</td>
+                        <td><StatusBadge Status="@bot.Status" /></td>
+                        <td class="text-muted small">@bot.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</td>
+                        <td><code class="small text-muted">@bot.Id.ToString()[..8]…</code></td>
+                        <td><a href="/chatbots/@bot.Id" class="btn btn-outline-secondary btn-sm">View</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<DocumentChatBot>? bots;
+
+    protected override async Task OnInitializedAsync() =>
+        bots = await Svc.GetAllAsync();
+}
