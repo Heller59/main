@@ -1,0 +1,22 @@
+################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+# Visual Studio cache/options
+.vs/
+
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# NuGet packages (packages.config style)
+packages/
+*.nupkg
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+
+# Publish output
+[Pp]ublish/
