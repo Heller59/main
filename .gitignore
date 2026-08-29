@@ -20,3 +20,9 @@ packages/
 
 # Publish output
 [Pp]ublish/
+
+# Runtime data (ChatBotAdmin)
+Uploads/
+*.db
+*.db-shm
+*.db-wal
