@@ -2,6 +2,7 @@ using ChatBotAdmin.Components;
 using ChatBotAdmin.Data;
 using ChatBotAdmin.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +40,16 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Serve Uploads/ at /uploads — for images extracted from documents
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads");
+Directory.CreateDirectory(uploadsPath);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath  = "/uploads"
+});
+
 app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

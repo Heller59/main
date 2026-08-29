@@ -151,12 +151,11 @@
     private sealed class CreateModel
     {
         [System.ComponentModel.DataAnnotations.Required]
-        public string Name { get; set; } = string.Empty;
+        public string Name { get; set; } = "Sample Application";
 
         [System.ComponentModel.DataAnnotations.Required]
-        public string Version { get; set; } = string.Empty;
+        public string Version { get; set; } = "V1.0";
 
-        [System.ComponentModel.DataAnnotations.Required]
         public string Instructions { get; set; } = string.Empty;
     }
 }

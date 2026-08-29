@@ -11,7 +11,7 @@ namespace ChatBotAdmin.Services;
 public class OllamaService(HttpClient http, IConfiguration config)
 {
     private string EmbedModel => config["Ollama:EmbedModel"] ?? "nomic-embed-text";
-    private string ChatModel  => config["Ollama:ChatModel"]  ?? "qwen3:8b";
+    private string ChatModel  => config["Ollama:ChatModel"]  ?? "qwen3.8:latest";
 
     // ---------------------------------------------------------------
     // Embeddings  (mirrors Python: ollama.embeddings(model=..., prompt=...))

@@ -13,7 +13,7 @@
         <div class="card text-center h-100">
             <div class="card-body">
                 <div class="display-6 fw-bold text-primary">@total</div>
-                <div class="text-muted small mt-1">Total ChatBots</div>
+                <div class="text-muted small mt-1">Total Chat Bots</div>
             </div>
         </div>
     </div>
@@ -44,8 +44,7 @@
 </div>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h5 mb-0">Recent ChatBots</h2>
-    <a href="/chatbots/create" class="btn btn-primary btn-sm">+ New ChatBot</a>
+    <a href="/chatbots/create" class="btn btn-primary btn-sm">+ New Chat Bot</a>
 </div>
 
 @if (recent is null)
@@ -62,22 +61,22 @@ else
         <table class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
+                    <th></th>
                     <th>Name</th>
                     <th>Version</th>
                     <th>Status</th>
                     <th>Created</th>
-                    <th></th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var bot in recent)
                 {
                     <tr>
+                        <td><a href="/chatbots/@bot.Id" class="btn btn-outline-secondary btn-sm">View</a></td>
                         <td>@bot.Name</td>
                         <td><span class="badge bg-secondary">@bot.Version</span></td>
                         <td><StatusBadge Status="@bot.Status" /></td>
                         <td class="text-muted small">@bot.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</td>
-                        <td><a href="/chatbots/@bot.Id" class="btn btn-outline-secondary btn-sm">View</a></td>
                     </tr>
                 }
             </tbody>

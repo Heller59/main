@@ -1,9 +1,11 @@
 @page "/chatbots/{Id:guid}"
 @using ChatBotAdmin.Models
 @using ChatBotAdmin.Services
+@using System.Text.Json
 @inject DocumentChatBotService Svc
 @inject NavigationManager Nav
 @rendermode InteractiveServer
+@implements IDisposable
 
 <PageTitle>@(bot?.Name ?? "ChatBot") – ChatBot Admin</PageTitle>
 
@@ -15,7 +17,7 @@ else
 {
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/chatbots">Document ChatBots</a></li>
+            <li class="breadcrumb-item"><a href="/chatbots">Document Chat Bots</a></li>
             <li class="breadcrumb-item active">@bot.Name <span class="badge bg-secondary ms-1">@bot.Version</span></li>
         </ol>
     </nav>
@@ -25,7 +27,14 @@ else
             <h1 class="h3 mb-1">@bot.Name</h1>
             <span class="text-muted small">Created @bot.CreatedAt.ToLocalTime().ToString("MMMM d, yyyy h:mm tt")</span>
         </div>
-        <StatusBadge Status="@bot.Status" />
+        <div class="d-flex align-items-center gap-2">
+            @if (polling)
+            {
+                <span class="spinner-border spinner-border-sm text-secondary" title="Checking status…"></span>
+                <span class="text-muted small">Processing…</span>
+            }
+            <StatusBadge Status="@bot.Status" />
+        </div>
     </div>
 
     @if (bot.Status == ProcessingStatus.Error)
@@ -95,6 +104,38 @@ else
         </div>
     }
 
+    @if (ChunksWithImages.Count > 0)
+    {
+        <div class="card mb-4">
+            <div class="card-header fw-semibold d-flex justify-content-between">
+                <span>Extracted Images</span>
+                <span class="text-muted small fw-normal">
+                    @ChunksWithImages.Sum(c => JsonSerializer.Deserialize<List<string>>(c.ImagePaths!)?.Count ?? 0) image(s)
+                    across @ChunksWithImages.Count chunk(s)
+                </span>
+            </div>
+            <div class="card-body">
+                @foreach (var chunk in ChunksWithImages)
+                {
+                    var imagePaths = JsonSerializer.Deserialize<List<string>>(chunk.ImagePaths!) ?? [];
+                    <div class="mb-3">
+                        <div class="text-muted small fw-semibold mb-2">@chunk.Heading (chunk @chunk.ChunkIndex)</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var url in imagePaths)
+                            {
+                                <a href="@url" target="_blank">
+                                    <img src="@url"
+                                         alt="Document image from @chunk.Heading"
+                                         style="max-height:160px; max-width:240px; object-fit:contain; border:1px solid #dee2e6; border-radius:4px;" />
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
     <div class="d-flex gap-2 mb-5">
         <a href="/chatbots" class="btn btn-outline-secondary">← Back to list</a>
         <a href="/chatbots/create" class="btn btn-primary">Create new version</a>
@@ -135,11 +176,50 @@ else
     [Parameter] public Guid Id { get; set; }
 
     private DocumentChatBot? bot;
+
+    private List<DocumentChunk> ChunksWithImages =>
+        bot?.Chunks.Where(c => !string.IsNullOrEmpty(c.ImagePaths)).ToList() ?? [];
     private bool showConfirm;
     private bool deleting;
+    private bool polling;
+    private CancellationTokenSource? _pollCts;
 
-    protected override async Task OnInitializedAsync() =>
+    protected override async Task OnInitializedAsync()
+    {
         bot = await Svc.GetByIdAsync(Id);
+        if (bot?.Status == ProcessingStatus.Processing)
+            StartPolling();
+    }
+
+    private void StartPolling()
+    {
+        polling = true;
+        _pollCts = new CancellationTokenSource();
+        _ = PollAsync(_pollCts.Token);
+    }
+
+    private async Task PollAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                await Task.Delay(5000, ct);
+                bot = await Svc.GetByIdAsync(Id);
+                if (bot?.Status != ProcessingStatus.Processing)
+                {
+                    polling = false;
+                }
+                await InvokeAsync(StateHasChanged);
+                if (!polling) break;
+            }
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            polling = false;
+        }
+    }
 
     private void ConfirmDelete() => showConfirm = true;
 
@@ -148,5 +228,11 @@ else
         deleting = true;
         await Svc.DeleteAsync(Id);
         Nav.NavigateTo("/chatbots");
+    }
+
+    public void Dispose()
+    {
+        _pollCts?.Cancel();
+        _pollCts?.Dispose();
     }
 }

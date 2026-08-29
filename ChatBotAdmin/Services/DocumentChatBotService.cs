@@ -26,6 +26,7 @@ public class DocumentChatBotService(
 
     public async Task<DocumentChatBot?> GetByIdAsync(Guid id) =>
         await db.DocumentChatBots
+                .AsNoTracking()
                 .Include(x => x.Chunks)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -104,9 +105,12 @@ public class DocumentChatBotService(
             // Step A: extract full text for preview display
             record.ExtractedText = ExtractFullText(filePath);
 
-            // Step B: chunk (mirrors chunk_docx.py)
+            // Step B: chunk (mirrors chunk_docx.py) — images are extracted alongside
             logger.LogInformation("Chunking {File}", originalFileName);
-            var chunks = chunker.Chunk(filePath, originalFileName, record.Id);
+            var imageDir     = Path.Combine(UploadsRoot, "images", record.Id.ToString());
+            var imageUrlBase = $"/uploads/images/{record.Id}";
+            Directory.CreateDirectory(imageDir);
+            var chunks = chunker.Chunk(filePath, originalFileName, record.Id, imageDir, imageUrlBase);
             logger.LogInformation("Created {N} chunks", chunks.Count);
 
             // Step C: embed each chunk (mirrors build_index.py)
