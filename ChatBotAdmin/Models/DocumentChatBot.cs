@@ -28,6 +28,12 @@ public class DocumentChatBot
 
     /// <summary>Human-readable error message if processing failed</summary>
     public string? ErrorMessage { get; set; }
+
+    /// <summary>Total number of chunks indexed (set after processing)</summary>
+    public int ChunkCount { get; set; }
+
+    // Navigation
+    public List<DocumentChunk> Chunks { get; set; } = [];
 }
 
 public enum ProcessingStatus
