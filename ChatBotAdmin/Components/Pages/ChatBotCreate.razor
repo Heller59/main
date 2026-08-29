@@ -39,12 +39,35 @@
                 }
             </div>
 
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Widget Icon <span class="text-muted fw-normal">(optional)</span></label>
+                <InputFile OnChange="HandleIconSelected" class="form-control" accept=".png,.jpg,.jpeg,.webp,.svg" />
+                <div class="form-text">96×96 PNG with transparency recommended. Max 2 MB.</div>
+                @if (!string.IsNullOrEmpty(iconFileName))
+                {
+                    <div class="form-text text-success">Selected: @iconFileName</div>
+                }
+                @if (!string.IsNullOrEmpty(iconError))
+                {
+                    <div class="text-danger small">@iconError</div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Document Notes <span class="text-muted fw-normal">(optional)</span></label>
+                <InputTextArea @bind-Value="model.Instructions" class="form-control" rows="3"
+                               placeholder="Describe what this document is, its domain, audience, etc. Gives the AI background context." />
+                <div class="form-text">Used as background context about the document. Not a behavioural rule — use Chat Instructions for that.</div>
+            </div>
+
             <div class="mb-4">
-                <label class="form-label fw-semibold">Model Instructions</label>
-                <InputTextArea @bind-Value="model.Instructions" class="form-control" rows="5"
-                               placeholder="Describe how the model should read and respond using this document…" />
-                <ValidationMessage For="() => model.Instructions" class="text-danger small" />
-                <div class="form-text">These instructions are sent to the AI model along with the document content.</div>
+                <label class="form-label fw-semibold">Chat Instructions <span class="text-muted fw-normal">(optional)</span></label>
+                <InputTextArea @bind-Value="model.ChatInstructions" class="form-control" rows="5"
+                               placeholder="e.g. Answer only questions about login and account setup. Only include an image reference when the user asks about a screenshot or visual." />
+                <div class="form-text">
+                    Sent as the system prompt with every user question. Controls tone, scope, and image behaviour.
+                    Use <code>[IMAGE: url]</code> is emitted by the AI automatically — instruct it when to do so here.
+                </div>
             </div>
 
             @if (!string.IsNullOrEmpty(submitError))
@@ -90,6 +113,9 @@
     private IBrowserFile? selectedFile;
     private string selectedFileName = string.Empty;
     private string fileError = string.Empty;
+    private IBrowserFile? iconFile;
+    private string iconFileName = string.Empty;
+    private string iconError = string.Empty;
     private string submitError = string.Empty;
     private bool busy;
 
@@ -118,6 +144,30 @@
         selectedFileName = file.Name;
     }
 
+    private void HandleIconSelected(InputFileChangeEventArgs e)
+    {
+        iconError = string.Empty;
+        var file = e.File;
+        var allowed = new[] { ".png", ".jpg", ".jpeg", ".webp", ".svg" };
+        var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+
+        if (!allowed.Contains(ext))
+        {
+            iconError = "Only PNG, JPG, WebP, or SVG files are supported.";
+            iconFile = null; iconFileName = string.Empty;
+            return;
+        }
+        if (file.Size > 2 * 1024 * 1024)
+        {
+            iconError = "Icon must be 2 MB or smaller.";
+            iconFile = null; iconFileName = string.Empty;
+            return;
+        }
+
+        iconFile = file;
+        iconFileName = file.Name;
+    }
+
     private async Task HandleSubmit()
     {
         if (selectedFile is null)
@@ -136,8 +186,15 @@
                 model.Name,
                 model.Version,
                 model.Instructions,
+                model.ChatInstructions,
                 stream,
                 selectedFile.Name);
+
+            if (iconFile is not null)
+            {
+                await using var iconStream = iconFile.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+                await Svc.SaveIconAsync(bot.Id, iconStream, iconFile.Name);
+            }
 
             Nav.NavigateTo($"/chatbots/{bot.Id}");
         }
@@ -157,5 +214,6 @@
         public string Version { get; set; } = "V1.0";
 
         public string Instructions { get; set; } = string.Empty;
+        public string ChatInstructions { get; set; } = string.Empty;
     }
 }

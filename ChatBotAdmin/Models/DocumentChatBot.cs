@@ -10,8 +10,11 @@ public class DocumentChatBot
     /// <summary>User-supplied version label, e.g. "V1.0"</summary>
     public string Version { get; set; } = string.Empty;
 
-    /// <summary>System instructions sent to the model along with the document</summary>
+    /// <summary>Document context / domain notes — helps the model understand what this document is</summary>
     public string Instructions { get; set; } = string.Empty;
+
+    /// <summary>Chat behavior instructions — sent as the system prompt with every user question</summary>
+    public string ChatInstructions { get; set; } = string.Empty;
 
     /// <summary>Original filename of the uploaded Word document</summary>
     public string DocumentFileName { get; set; } = string.Empty;
@@ -28,6 +31,9 @@ public class DocumentChatBot
 
     /// <summary>Human-readable error message if processing failed</summary>
     public string? ErrorMessage { get; set; }
+
+    /// <summary>URL path to the uploaded icon image, e.g. "/uploads/images/{id}/icon.png"</summary>
+    public string? IconPath { get; set; }
 
     /// <summary>Total number of chunks indexed (set after processing)</summary>
     public int ChunkCount { get; set; }

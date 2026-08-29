@@ -85,9 +85,71 @@ else
     </div>
 
     <div class="card mb-4">
-        <div class="card-header fw-semibold">Model Instructions</div>
+        <div class="card-header fw-semibold">Widget Icon</div>
         <div class="card-body">
-            <p class="mb-0" style="white-space: pre-wrap;">@bot.Instructions</p>
+            <p class="text-muted small mb-3">
+                Displayed in the chat toggle button and panel header.
+                Recommended: <strong>96×96 PNG with transparency</strong>.
+            </p>
+            <div class="d-flex align-items-center gap-4">
+                @if (!string.IsNullOrEmpty(bot.IconPath))
+                {
+                    <img src="@bot.IconPath" alt="Widget icon"
+                         style="width:64px;height:64px;object-fit:contain;border:1px solid #dee2e6;border-radius:8px;background:#f8f9fa;" />
+                }
+                else
+                {
+                    <div style="width:64px;height:64px;border:2px dashed #dee2e6;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                        <span class="text-muted small">None</span>
+                    </div>
+                }
+                <div>
+                    <InputFile OnChange="HandleIconSelected" accept=".png,.jpg,.jpeg,.webp,.svg" class="form-control form-control-sm mb-2" style="max-width:280px;" />
+                    @if (!string.IsNullOrEmpty(iconError))
+                    {
+                        <div class="text-danger small">@iconError</div>
+                    }
+                    @if (iconUploading)
+                    {
+                        <span class="spinner-border spinner-border-sm text-primary me-1"></span>
+                        <span class="text-muted small">Uploading…</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+            <span>Document Notes</span>
+            <span class="text-muted small fw-normal">Background context about this document</span>
+        </div>
+        <div class="card-body">
+            @if (string.IsNullOrWhiteSpace(bot.Instructions))
+            {
+                <p class="text-muted small mb-0 fst-italic">No document notes provided.</p>
+            }
+            else
+            {
+                <p class="mb-0" style="white-space: pre-wrap;">@bot.Instructions</p>
+            }
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+            <span>Chat Instructions</span>
+            <span class="text-muted small fw-normal">Sent as system prompt with every question</span>
+        </div>
+        <div class="card-body">
+            @if (string.IsNullOrWhiteSpace(bot.ChatInstructions))
+            {
+                <p class="text-muted small mb-0 fst-italic">No chat instructions set. The AI will use default rules only.</p>
+            }
+            else
+            {
+                <p class="mb-0" style="white-space: pre-wrap;">@bot.ChatInstructions</p>
+            }
         </div>
     </div>
 
@@ -181,6 +243,8 @@ else
         bot?.Chunks.Where(c => !string.IsNullOrEmpty(c.ImagePaths)).ToList() ?? [];
     private bool showConfirm;
     private bool deleting;
+    private bool iconUploading;
+    private string iconError = string.Empty;
     private bool polling;
     private CancellationTokenSource? _pollCts;
 
@@ -218,6 +282,44 @@ else
         finally
         {
             polling = false;
+        }
+    }
+
+    private async Task HandleIconSelected(InputFileChangeEventArgs e)
+    {
+        iconError     = string.Empty;
+        iconUploading = true;
+
+        var file = e.File;
+        var allowed = new[] { ".png", ".jpg", ".jpeg", ".webp", ".svg" };
+        var ext     = Path.GetExtension(file.Name).ToLowerInvariant();
+
+        if (!allowed.Contains(ext))
+        {
+            iconError     = "Only PNG, JPG, WebP, or SVG files are supported.";
+            iconUploading = false;
+            return;
+        }
+        if (file.Size > 2 * 1024 * 1024)
+        {
+            iconError     = "Icon must be 2 MB or smaller.";
+            iconUploading = false;
+            return;
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+            var url   = await Svc.SaveIconAsync(Id, stream, file.Name);
+            bot!.IconPath = url;
+        }
+        catch (Exception ex)
+        {
+            iconError = $"Upload failed: {ex.Message}";
+        }
+        finally
+        {
+            iconUploading = false;
         }
     }
 

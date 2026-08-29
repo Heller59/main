@@ -30,6 +30,27 @@ public class DocumentChatBotService(
                 .Include(x => x.Chunks)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
+    public async Task<string> SaveIconAsync(Guid id, Stream stream, string originalFileName)
+    {
+        var record = await db.DocumentChatBots.FindAsync(id)
+                     ?? throw new InvalidOperationException("ChatBot not found.");
+
+        var ext       = Path.GetExtension(originalFileName).ToLowerInvariant();
+        var imageDir  = Path.Combine(UploadsRoot, "images", id.ToString());
+        Directory.CreateDirectory(imageDir);
+
+        // Always store as "icon{ext}" so re-uploads replace the previous file
+        var filePath  = Path.Combine(imageDir, $"icon{ext}");
+        await using (var fs = File.Create(filePath))
+            await stream.CopyToAsync(fs);
+
+        var iconUrl       = $"/uploads/images/{id}/icon{ext}";
+        record.IconPath   = iconUrl;
+        await db.SaveChangesAsync();
+
+        return iconUrl;
+    }
+
     public async Task DeleteAsync(Guid id)
     {
         var record = await db.DocumentChatBots.FindAsync(id);
@@ -53,6 +74,7 @@ public class DocumentChatBotService(
         string name,
         string version,
         string instructions,
+        string chatInstructions,
         Stream fileStream,
         string originalFileName,
         CancellationToken ct = default)
@@ -72,6 +94,7 @@ public class DocumentChatBotService(
             Name             = name,
             Version          = version,
             Instructions     = instructions,
+            ChatInstructions = chatInstructions,
             DocumentFileName = originalFileName,
             StoredFilePath   = storedName,
             Status           = ProcessingStatus.Processing,

@@ -28,12 +28,12 @@
         /* ── Toggle button ── */
         #toggle-btn {
             width: 56px; height: 56px; border-radius: 50%;
-            background: #0d6efd; color: #fff; border: none; cursor: pointer;
+            background: #00BCD4; color: #fff; border: none; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 16px rgba(13,110,253,.45);
+            box-shadow: 0 4px 16px rgba(0,188,212,.45);
             transition: transform .15s, box-shadow .15s;
         }
-        #toggle-btn:hover  { transform: scale(1.08); box-shadow: 0 6px 20px rgba(13,110,253,.55); }
+        #toggle-btn:hover  { transform: scale(1.08); box-shadow: 0 6px 20px rgba(0,188,212,.55); }
         #toggle-btn:active { transform: scale(.96); }
         #toggle-btn svg { width: 26px; height: 26px; pointer-events: none; }
 
@@ -52,7 +52,7 @@
 
         /* ── Header ── */
         #panel-header {
-            background: #0d6efd; color: #fff;
+            background: #00BCD4; color: #fff;
             padding: 13px 16px; font-weight: 600; font-size: 15px;
             display: flex; align-items: center; gap: 8px; flex-shrink: 0;
         }
@@ -93,7 +93,7 @@
             font-size: 14px; line-height: 1.55; word-break: break-word;
         }
         .user .bubble {
-            background: #0d6efd; color: #fff; border-bottom-right-radius: 4px;
+            background: #00BCD4; color: #fff; border-bottom-right-radius: 4px;
         }
         .bot .bubble {
             background: #f1f3f5; color: #1a1a1a; border-bottom-left-radius: 4px;
@@ -133,16 +133,16 @@
             max-height: 80px; overflow-y: auto; line-height: 1.45;
             transition: border-color .15s;
         }
-        #chat-input:focus { border-color: #0d6efd; }
+        #chat-input:focus { border-color: #00BCD4; }
         #chat-input::placeholder { color: #bbb; }
         #send-btn {
             width: 38px; height: 38px; border-radius: 50%; border: none;
-            background: #0d6efd; color: #fff; cursor: pointer; flex-shrink: 0;
+            background: #00BCD4; color: #fff; cursor: pointer; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
             transition: background .15s, transform .1s;
         }
         #send-btn:disabled { background: #ccc; cursor: default; }
-        #send-btn:not(:disabled):hover  { background: #0b5ed7; }
+        #send-btn:not(:disabled):hover  { background: #00A5BB; }
         #send-btn:not(:disabled):active { transform: scale(.92); }
         #send-btn svg { width: 17px; height: 17px; pointer-events: none; }
     `;
@@ -200,9 +200,25 @@
 
     let busy = false;
 
-    // ── Load bot info (name, readiness) ───────────────────────────────────
+    // ── Load bot info (name, icon) ────────────────────────────────────────
     fetch(infoUrl).then(r => r.ok ? r.json() : null).then(info => {
-        if (info) $('bot-title').textContent = `${info.name} – Ask a question`;
+        if (!info) return;
+        $('bot-title').textContent = `${info.name} – Ask a question`;
+        if (info.iconPath) {
+            const iconSrc = info.iconPath.startsWith('http')
+                ? info.iconPath
+                : serverOrigin + info.iconPath;
+            // Toggle button: replace SVG with icon, drop the blue circle background
+            togBtn.innerHTML = `<img src="${iconSrc}" alt="${info.name}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">`;
+            togBtn.style.background  = 'transparent';
+            togBtn.style.boxShadow   = 'none';
+            togBtn.style.border      = 'none';
+            // Panel header: insert icon before the title
+            const img = document.createElement('img');
+            img.src = iconSrc; img.alt = info.name;
+            img.style.cssText = 'width:28px;height:28px;object-fit:contain;border-radius:50%;flex-shrink:0;';
+            $('bot-title').before(img);
+        }
     }).catch(() => {});
 
     // ── Panel toggle ──────────────────────────────────────────────────────
