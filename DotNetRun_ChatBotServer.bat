@@ -1,0 +1,1 @@
+dotnet run --project ChatBotServer --urls "http://0.0.0.0:5017"
