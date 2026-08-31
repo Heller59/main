@@ -4,6 +4,7 @@
 @using System.Text.Json
 @inject DocumentChatBotService Svc
 @inject NavigationManager Nav
+@inject IConfiguration Config
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -75,7 +76,7 @@ else
                     <code class="d-block bg-light p-2 rounded text-break">@bot.Id</code>
                     <div class="mt-3">
                         <p class="text-muted small mb-1">Example embed script:</p>
-                        <pre class="bg-light p-2 rounded small text-break"><code>&lt;script src="https://localhost:7255/chatbot.js"
+                        <pre class="bg-light p-2 rounded small text-break"><code>&lt;script src="@ChatBotServerBaseUrl/chatbot.js"
   data-org-id="@bot.Id"
   defer&gt;&lt;/script&gt;</code></pre>
                     </div>
@@ -238,6 +239,10 @@ else
     [Parameter] public Guid Id { get; set; }
 
     private DocumentChatBot? bot;
+
+    // Base URL of the ChatBotServer that hosts chatbot.js — configured in appsettings.json
+    private string ChatBotServerBaseUrl =>
+        (Config["ChatBotServer:BaseUrl"] ?? "http://192.168.1.201:5017").TrimEnd('/');
 
     private List<DocumentChunk> ChunksWithImages =>
         bot?.Chunks.Where(c => !string.IsNullOrEmpty(c.ImagePaths)).ToList() ?? [];
