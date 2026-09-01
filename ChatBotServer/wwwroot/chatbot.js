@@ -28,12 +28,13 @@
         /* ── Toggle button ── */
         #toggle-btn {
             width: 56px; height: 56px; border-radius: 50%;
-            background: #00BCD4; color: #fff; border: none; cursor: pointer;
+            /* Neutral placeholder until the bot icon / colour loads — avoids a cyan flash */
+            background: #e5e7eb; color: #9ca3af; border: none; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 16px rgba(0,188,212,.45);
+            box-shadow: 0 4px 16px rgba(0,0,0,.15);
             transition: transform .15s, box-shadow .15s;
         }
-        #toggle-btn:hover  { transform: scale(1.08); box-shadow: 0 6px 20px rgba(0,188,212,.55); }
+        #toggle-btn:hover  { transform: scale(1.08); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
         #toggle-btn:active { transform: scale(.96); }
         #toggle-btn svg { width: 26px; height: 26px; pointer-events: none; }
 
@@ -50,6 +51,19 @@
         }
         #panel.open { opacity: 1; transform: none; pointer-events: all; }
 
+        /* ── Expanded (large) view ── */
+        #panel.expanded {
+            position: fixed; top: 10vh; left: 10vw; right: auto; bottom: auto;
+            width: 80vw; height: 80vh; max-width: 80vw; max-height: 80vh;
+            border-radius: 16px;
+        }
+        @media (max-width: 640px) {
+            #panel.expanded {
+                top: 2vh; left: 2vw; width: 96vw; height: 96vh;
+                max-width: 96vw; max-height: 96vh;
+            }
+        }
+
         /* ── Header ── */
         #panel-header {
             background: #00BCD4; color: #fff;
@@ -61,13 +75,13 @@
             background: #4cff91; flex-shrink: 0;
         }
         #bot-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        #close-btn {
+        #expand-btn, #close-btn {
             background: none; border: none; color: #fff; cursor: pointer;
             opacity: .75; padding: 2px; display: flex; align-items: center;
             border-radius: 4px; transition: opacity .1s;
         }
-        #close-btn:hover { opacity: 1; }
-        #close-btn svg { width: 18px; height: 18px; pointer-events: none; }
+        #expand-btn:hover, #close-btn:hover { opacity: 1; }
+        #expand-btn svg, #close-btn svg { width: 18px; height: 18px; pointer-events: none; }
 
         /* ── Messages ── */
         #messages {
@@ -84,7 +98,7 @@
         }
         #greeting p { margin-top: 8px; }
 
-        .msg { display: flex; flex-direction: column; gap: 5px; max-width: 86%; }
+        .msg { display: flex; flex-direction: column; gap: 5px; max-width: min(86%, 760px); }
         .msg.user { align-self: flex-end; }
         .msg.bot  { align-self: flex-start; }
 
@@ -107,9 +121,30 @@
         .msg-images img {
             max-width: 220px; max-height: 150px; object-fit: contain;
             border-radius: 8px; border: 1px solid #e0e0e0;
-            cursor: pointer; transition: opacity .15s;
+            cursor: zoom-in; transition: opacity .15s;
         }
         .msg-images img:hover { opacity: .88; }
+
+        /* ── Lightbox (enlarged image) ── */
+        #lightbox {
+            position: fixed; inset: 0; z-index: 2147483647;
+            background: rgba(0,0,0,.82);
+            display: none; align-items: center; justify-content: center;
+            padding: 24px; cursor: zoom-out;
+        }
+        #lightbox.open { display: flex; }
+        #lightbox img {
+            max-width: 100%; max-height: 100%; object-fit: contain;
+            border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,.55);
+        }
+        #lightbox-close {
+            position: absolute; top: 14px; right: 18px;
+            background: none; border: none; color: #fff; cursor: pointer;
+            opacity: .8; padding: 4px; display: flex; align-items: center;
+            transition: opacity .1s;
+        }
+        #lightbox-close:hover { opacity: 1; }
+        #lightbox-close svg { width: 26px; height: 26px; pointer-events: none; }
 
         /* ── Typing indicator ── */
         .typing { display: inline-flex; align-items: center; gap: 4px; padding: 12px 14px; }
@@ -154,6 +189,12 @@
                 <div id="panel-header">
                     <span class="status-dot"></span>
                     <span id="bot-title">Chat</span>
+                    <button id="expand-btn" aria-label="Expand chat" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+                            <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+                        </svg>
+                    </button>
                     <button id="close-btn" aria-label="Close chat">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -180,6 +221,14 @@
                     <path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/>
                 </svg>
             </button>
+            <div id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged image">
+                <button id="lightbox-close" aria-label="Close image">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+                <img alt="Enlarged image">
+            </div>
         </div>
     `;
 
@@ -194,11 +243,39 @@
     const panel   = $('panel');
     const togBtn  = $('toggle-btn');
     const closeBtn= $('close-btn');
+    const expandBtn = $('expand-btn');
     const msgs    = $('messages');
     const input   = $('chat-input');
     const sendBtn = $('send-btn');
+    const lightbox      = $('lightbox');
+    const lightboxImg   = lightbox.querySelector('img');
+    const lightboxClose = $('lightbox-close');
 
     let busy = false;
+
+    // ── Lightbox: enlarge message images on click ────────────────────────
+    function openLightbox(src, alt) {
+        lightboxImg.src = src;
+        lightboxImg.alt = alt || 'Enlarged image';
+        lightbox.classList.add('open');
+    }
+    function closeLightbox() {
+        lightbox.classList.remove('open');
+        lightboxImg.removeAttribute('src');
+    }
+    lightbox.addEventListener('click', e => {
+        // Close on backdrop / close-button click, but not when clicking the image itself
+        if (e.target !== lightboxImg) closeLightbox();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox();
+    });
+    msgs.addEventListener('click', e => {
+        const img = e.target.closest('.msg-images img');
+        if (!img) return;
+        e.preventDefault();               // don't follow the wrapping <a> / open a new tab
+        openLightbox(img.src, img.alt);
+    });
 
     // ── Load bot info (name, icon) ────────────────────────────────────────
     fetch(infoUrl).then(r => r.ok ? r.json() : null).then(info => {
@@ -208,7 +285,7 @@
             const iconSrc = info.iconPath.startsWith('http')
                 ? info.iconPath
                 : serverOrigin + info.iconPath;
-            // Toggle button: replace SVG with icon, drop the blue circle background
+            // Toggle button: replace SVG with icon, drop the placeholder circle background
             togBtn.innerHTML = `<img src="${iconSrc}" alt="${info.name}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">`;
             togBtn.style.background  = 'transparent';
             togBtn.style.boxShadow   = 'none';
@@ -218,6 +295,11 @@
             img.src = iconSrc; img.alt = info.name;
             img.style.cssText = 'width:28px;height:28px;object-fit:contain;border-radius:50%;flex-shrink:0;';
             $('bot-title').before(img);
+        } else {
+            // No custom icon — use the branded cyan button instead of the grey placeholder
+            togBtn.style.background = '#00BCD4';
+            togBtn.style.color      = '#fff';
+            togBtn.style.boxShadow  = '0 4px 16px rgba(0,188,212,.45)';
         }
     }).catch(() => {});
 
@@ -234,6 +316,23 @@
 
     togBtn.addEventListener('click',  () => panel.classList.contains('open') ? closePanel() : openPanel());
     closeBtn.addEventListener('click', closePanel);
+
+    // ── Expand / collapse panel ──────────────────────────────────────────
+    const ICON_EXPAND = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+        <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
+    const ICON_COLLAPSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+        <line x1="14" y1="10" x2="21" y2="3"/><line x1="10" y1="14" x2="3" y2="21"/></svg>`;
+
+    function setExpanded(on) {
+        panel.classList.toggle('expanded', on);
+        expandBtn.innerHTML = on ? ICON_COLLAPSE : ICON_EXPAND;
+        expandBtn.setAttribute('aria-pressed', String(on));
+        expandBtn.setAttribute('aria-label', on ? 'Collapse chat' : 'Expand chat');
+        scrollBottom();
+    }
+    expandBtn.addEventListener('click', () => setExpanded(!panel.classList.contains('expanded')));
 
     // ── Auto-resize textarea ──────────────────────────────────────────────
     input.addEventListener('input', () => {
@@ -275,7 +374,7 @@
         const imgHtml = images && images.length
             ? `<div class="msg-images">${images.map(u => {
                 const src = u.startsWith('http') ? u : serverOrigin + u;
-                return `<a href="${src}" target="_blank" rel="noopener"><img src="${src}" alt="Related image" loading="lazy"></a>`;
+                return `<a href="${src}" target="_blank" rel="noopener"><img src="${src}" alt="Related image" title="Click to enlarge" loading="lazy"></a>`;
               }).join('')}</div>`
             : '';
         el.innerHTML = `<div class="bubble">${formatAnswer(answer)}</div>${imgHtml}`;

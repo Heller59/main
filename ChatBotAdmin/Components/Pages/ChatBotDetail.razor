@@ -45,6 +45,14 @@ else
         </div>
     }
 
+    <div class="d-flex gap-2 mb-4">
+        <a href="/chatbots" class="btn btn-outline-secondary">← Back to list</a>
+        <a href="/chatbots/create" class="btn btn-primary">Create new version</a>
+        <button class="btn btn-outline-danger ms-auto" @onclick="ConfirmDelete">
+            Delete
+        </button>
+    </div>
+
     <div class="row g-4 mb-4">
 
         <div class="col-md-6">
@@ -162,7 +170,7 @@ else
                 <span class="text-muted small fw-normal">@bot.ExtractedText.Length.ToString("N0") characters</span>
             </div>
             <div class="card-body">
-                <pre class="small text-muted mb-0" style="max-height:400px; overflow-y:auto; white-space:pre-wrap;">@bot.ExtractedText</pre>
+                <pre class="small text-muted mb-0" style="max-height:500px; overflow-y:auto; white-space:pre-wrap;">@bot.ExtractedText</pre>
             </div>
         </div>
     }
@@ -177,7 +185,7 @@ else
                     across @ChunksWithImages.Count chunk(s)
                 </span>
             </div>
-            <div class="card-body">
+            <div class="card-body" style="max-height:500px; overflow-y:auto;">
                 @foreach (var chunk in ChunksWithImages)
                 {
                     var imagePaths = JsonSerializer.Deserialize<List<string>>(chunk.ImagePaths!) ?? [];
@@ -198,14 +206,6 @@ else
             </div>
         </div>
     }
-
-    <div class="d-flex gap-2 mb-5">
-        <a href="/chatbots" class="btn btn-outline-secondary">← Back to list</a>
-        <a href="/chatbots/create" class="btn btn-primary">Create new version</a>
-        <button class="btn btn-outline-danger ms-auto" @onclick="ConfirmDelete">
-            Delete
-        </button>
-    </div>
 
     @if (showConfirm)
     {
