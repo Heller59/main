@@ -19,6 +19,9 @@ public class DocumentChatBot
     /// <summary>Opening message shown to the user when the widget loads (optional).</summary>
     public string Greeting { get; set; } = string.Empty;
 
+    /// <summary>Primary brand color for the widget, as a CSS hex value e.g. "#499CB4". Defaults to the global brand color when empty.</summary>
+    public string BrandColor { get; set; } = string.Empty;
+
     /// <summary>Original filename of the uploaded Word document</summary>
     public string DocumentFileName { get; set; } = string.Empty;
 

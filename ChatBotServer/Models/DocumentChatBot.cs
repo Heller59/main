@@ -8,6 +8,7 @@ public class DocumentChatBot
     public string Instructions { get; set; } = string.Empty;
     public string ChatInstructions { get; set; } = string.Empty;
     public string Greeting { get; set; } = string.Empty;
+    public string BrandColor { get; set; } = string.Empty;
     public string DocumentFileName { get; set; } = string.Empty;
     public string StoredFilePath { get; set; } = string.Empty;
     public string ExtractedText { get; set; } = string.Empty;

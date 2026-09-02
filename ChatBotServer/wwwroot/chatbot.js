@@ -340,6 +340,44 @@
         openLightbox(img.src, img.alt);
     });
 
+    // ── Color helpers ─────────────────────────────────────────────────────
+    // Parse "#rrggbb" → [r, g, b] and back, then darken by a fixed amount.
+    const DEFAULT_COLOR      = '#499CB4';
+    const DEFAULT_COLOR_DARK = '#3D8BA0';
+
+    function hexToRgb(hex) {
+        const h = hex.replace('#', '');
+        return [
+            parseInt(h.slice(0, 2), 16),
+            parseInt(h.slice(2, 4), 16),
+            parseInt(h.slice(4, 6), 16),
+        ];
+    }
+    function rgbToHex(r, g, b) {
+        return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('');
+    }
+    function darken(hex, amount = 18) {
+        const [r, g, b] = hexToRgb(hex);
+        return rgbToHex(r - amount, g - amount, b - amount);
+    }
+    function isValidHex(s) { return /^#[0-9a-f]{6}$/i.test(s); }
+
+    function applyBrandColor(hex) {
+        if (!hex || !isValidHex(hex)) return; // keep the CSS defaults
+        const dark = darken(hex);
+        // Rewrite CSS custom properties injected into the shadow DOM stylesheet
+        const sheet = shadow.querySelector('style');
+        if (!sheet) return;
+        sheet.textContent = sheet.textContent
+            .replace(/#499CB4/gi, hex)
+            .replace(/#3D8BA0/gi, dark);
+        // Also fix the toggle button if it's using the default brand color
+        if (togBtn.style.background === DEFAULT_COLOR || togBtn.style.background === 'rgb(73, 156, 180)') {
+            togBtn.style.background = hex;
+            togBtn.style.boxShadow  = `0 4px 16px ${hex}70`;
+        }
+    }
+
     // ── Load bot info + session history in parallel ───────────────────────
     const historyUrl = `${serverOrigin}/api/history/${orgId}/${sessionToken}`;
 
@@ -351,6 +389,7 @@
         // ── Apply bot branding ──────────────────────────────────────────
         if (info) {
             $('bot-title').textContent = `${info.name}`;
+            if (info.brandColor) applyBrandColor(info.brandColor);
 
             if (info.iconPath) {
                 const iconSrc = info.iconPath.startsWith('http')

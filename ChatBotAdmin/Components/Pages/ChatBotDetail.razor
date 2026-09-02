@@ -93,133 +93,173 @@ else
     </div>
 
     <div class="card mb-4">
-        <div class="card-header fw-semibold">Widget Icon</div>
+        <div class="card-header fw-semibold">Widget Appearance</div>
         <div class="card-body">
-            <p class="text-muted small mb-3">
-                Displayed in the chat toggle button and panel header.
-                Recommended: <strong>96×96 PNG with transparency</strong>.
-            </p>
-            <div class="d-flex align-items-center gap-4">
-                @if (!string.IsNullOrEmpty(bot.IconPath))
-                {
-                    <img src="@bot.IconPath" alt="Widget icon"
-                         style="width:64px;height:64px;object-fit:contain;border:1px solid #dee2e6;border-radius:8px;background:#f8f9fa;" />
-                }
-                else
-                {
-                    <div style="width:64px;height:64px;border:2px dashed #dee2e6;border-radius:8px;display:flex;align-items:center;justify-content:center;">
-                        <span class="text-muted small">None</span>
-                    </div>
-                }
+            <div class="d-flex align-items-start gap-5 flex-wrap">
+
                 <div>
-                    <InputFile OnChange="HandleIconSelected" accept=".png,.jpg,.jpeg,.webp,.svg" class="form-control form-control-sm mb-2" style="max-width:280px;" />
-                    @if (!string.IsNullOrEmpty(iconError))
+                    <div class="fw-semibold small mb-2">Icon</div>
+                    <p class="text-muted small mb-2">
+                        Displayed in the toggle button and panel header.
+                        Recommended: <strong>96×96 PNG with transparency</strong>.
+                    </p>
+                    <div class="d-flex align-items-center gap-3">
+                        @if (!string.IsNullOrEmpty(bot.IconPath))
+                        {
+                            <img src="@bot.IconPath" alt="Widget icon"
+                                 style="width:56px;height:56px;object-fit:contain;border:1px solid #dee2e6;border-radius:8px;background:#f8f9fa;" />
+                        }
+                        else
+                        {
+                            <div style="width:56px;height:56px;border:2px dashed #dee2e6;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                                <span class="text-muted small">None</span>
+                            </div>
+                        }
+                        <div>
+                            <InputFile OnChange="HandleIconSelected" accept=".png,.jpg,.jpeg,.webp,.svg" class="form-control form-control-sm mb-1" style="max-width:260px;" />
+                            @if (!string.IsNullOrEmpty(iconError))
+                            {
+                                <div class="text-danger small">@iconError</div>
+                            }
+                            @if (iconUploading)
+                            {
+                                <span class="spinner-border spinner-border-sm text-primary me-1"></span>
+                                <span class="text-muted small">Uploading…</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="fw-semibold small mb-2">Brand Color</div>
+                    @if (!string.IsNullOrEmpty(bot.BrandColor))
                     {
-                        <div class="text-danger small">@iconError</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width:36px;height:36px;border-radius:6px;border:1px solid #dee2e6;background:@bot.BrandColor;flex-shrink:0;"></div>
+                            <code class="small">@bot.BrandColor</code>
+                        </div>
                     }
-                    @if (iconUploading)
+                    else
                     {
-                        <span class="spinner-border spinner-border-sm text-primary me-1"></span>
-                        <span class="text-muted small">Uploading…</span>
+                        <span class="text-muted small fst-italic">Using default</span>
+                    }
+                    <div class="mt-2">
+                        <a href="/chatbots/@bot.Id/edit" class="btn btn-outline-secondary btn-sm">Change in Edit</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                    <span>Greeting</span>
+                </div>
+                <div class="card-body">
+                    @if (string.IsNullOrWhiteSpace(bot.Greeting))
+                    {
+                        <p class="text-muted small mb-0 fst-italic">No greeting set. The widget will open directly to the chat input.</p>
+                    }
+                    else
+                    {
+                        <p class="mb-0" style="white-space: pre-wrap;">@bot.Greeting</p>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                    <span>Document Notes</span>
+                </div>
+                <div class="card-body">
+                    @if (string.IsNullOrWhiteSpace(bot.Instructions))
+                    {
+                        <p class="text-muted small mb-0 fst-italic">No document notes provided.</p>
+                    }
+                    else
+                    {
+                        <p class="mb-0" style="white-space: pre-wrap;">@bot.Instructions</p>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                    <span>Chat Instructions</span>
+                </div>
+                <div class="card-body">
+                    @if (string.IsNullOrWhiteSpace(bot.ChatInstructions))
+                    {
+                        <p class="text-muted small mb-0 fst-italic">No chat instructions set. The AI will use default rules only.</p>
+                    }
+                    else
+                    {
+                        <p class="mb-0" style="white-space: pre-wrap;">@bot.ChatInstructions</p>
                     }
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-            <span>Greeting</span>
-            <span class="text-muted small fw-normal">Shown when the widget opens; invites the user to share their name</span>
-        </div>
-        <div class="card-body">
-            @if (string.IsNullOrWhiteSpace(bot.Greeting))
-            {
-                <p class="text-muted small mb-0 fst-italic">No greeting set. The widget will open directly to the chat input.</p>
-            }
-            else
-            {
-                <p class="mb-0" style="white-space: pre-wrap;">@bot.Greeting</p>
-            }
-        </div>
-    </div>
+    var hasBothExtracted = !string.IsNullOrWhiteSpace(bot.ExtractedText) && ChunksWithImages.Count > 0;
+    var extractedColClass = hasBothExtracted ? "col-md-6" : "col-12";
 
-    <div class="card mb-4">
-        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-            <span>Document Notes</span>
-            <span class="text-muted small fw-normal">Background context about this document</span>
-        </div>
-        <div class="card-body">
-            @if (string.IsNullOrWhiteSpace(bot.Instructions))
-            {
-                <p class="text-muted small mb-0 fst-italic">No document notes provided.</p>
-            }
-            else
-            {
-                <p class="mb-0" style="white-space: pre-wrap;">@bot.Instructions</p>
-            }
-        </div>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-            <span>Chat Instructions</span>
-            <span class="text-muted small fw-normal">Sent as system prompt with every question</span>
-        </div>
-        <div class="card-body">
-            @if (string.IsNullOrWhiteSpace(bot.ChatInstructions))
-            {
-                <p class="text-muted small mb-0 fst-italic">No chat instructions set. The AI will use default rules only.</p>
-            }
-            else
-            {
-                <p class="mb-0" style="white-space: pre-wrap;">@bot.ChatInstructions</p>
-            }
-        </div>
-    </div>
-
-    @if (!string.IsNullOrWhiteSpace(bot.ExtractedText))
+    @if (!string.IsNullOrWhiteSpace(bot.ExtractedText) || ChunksWithImages.Count > 0)
     {
-        <div class="card mb-4">
-            <div class="card-header fw-semibold d-flex justify-content-between">
-                <span>Extracted Document Text</span>
-                <span class="text-muted small fw-normal">@bot.ExtractedText.Length.ToString("N0") characters</span>
-            </div>
-            <div class="card-body">
-                <pre class="small text-muted mb-0" style="max-height:500px; overflow-y:auto; white-space:pre-wrap;">@bot.ExtractedText</pre>
-            </div>
-        </div>
-    }
+        <div class="row g-4 mb-4">
+            @if (!string.IsNullOrWhiteSpace(bot.ExtractedText))
+            {
+                <div class="@extractedColClass">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold d-flex justify-content-between">
+                            <span>Extracted Document Text</span>
+                            <span class="text-muted small fw-normal">@bot.ExtractedText.Length.ToString("N0") characters</span>
+                        </div>
+                        <div class="card-body">
+                            <pre class="small text-muted mb-0" style="max-height:500px; overflow-y:auto; white-space:pre-wrap;">@bot.ExtractedText</pre>
+                        </div>
+                    </div>
+                </div>
+            }
 
-    @if (ChunksWithImages.Count > 0)
-    {
-        <div class="card mb-4">
-            <div class="card-header fw-semibold d-flex justify-content-between">
-                <span>Extracted Images</span>
-                <span class="text-muted small fw-normal">
-                    @ChunksWithImages.Sum(c => JsonSerializer.Deserialize<List<string>>(c.ImagePaths!)?.Count ?? 0) image(s)
-                    across @ChunksWithImages.Count chunk(s)
-                </span>
-            </div>
-            <div class="card-body" style="max-height:500px; overflow-y:auto;">
-                @foreach (var chunk in ChunksWithImages)
-                {
-                    var imagePaths = JsonSerializer.Deserialize<List<string>>(chunk.ImagePaths!) ?? [];
-                    <div class="mb-3">
-                        <div class="text-muted small fw-semibold mb-2">@chunk.Heading (chunk @chunk.ChunkIndex)</div>
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach (var url in imagePaths)
+            @if (ChunksWithImages.Count > 0)
+            {
+                <div class="@extractedColClass">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold d-flex justify-content-between">
+                            <span>Extracted Images</span>
+                            <span class="text-muted small fw-normal">
+                                @ChunksWithImages.Sum(c => JsonSerializer.Deserialize<List<string>>(c.ImagePaths!)?.Count ?? 0) image(s)
+                                across @ChunksWithImages.Count chunk(s)
+                            </span>
+                        </div>
+                        <div class="card-body" style="max-height:500px; overflow-y:auto;">
+                            @foreach (var chunk in ChunksWithImages)
                             {
-                                <a href="@url" target="_blank">
-                                    <img src="@url"
-                                         alt="Document image from @chunk.Heading"
-                                         style="max-height:160px; max-width:240px; object-fit:contain; border:1px solid #dee2e6; border-radius:4px;" />
-                                </a>
+                                var imagePaths = JsonSerializer.Deserialize<List<string>>(chunk.ImagePaths!) ?? [];
+                                <div class="mb-3">
+                                    <div class="text-muted small fw-semibold mb-2">@chunk.Heading (chunk @chunk.ChunkIndex)</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var url in imagePaths)
+                                        {
+                                            <a href="@url" target="_blank">
+                                                <img src="@url"
+                                                     alt="Document image from @chunk.Heading"
+                                                     style="max-height:160px; max-width:240px; object-fit:contain; border:1px solid #dee2e6; border-radius:4px;" />
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
                             }
                         </div>
                     </div>
-                }
-            </div>
+                </div>
+            }
         </div>
     }
 

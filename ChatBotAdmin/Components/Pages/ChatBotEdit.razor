@@ -3,6 +3,7 @@
 @using ChatBotAdmin.Services
 @inject DocumentChatBotService Svc
 @inject NavigationManager Nav
+@inject IConfiguration Config
 @rendermode InteractiveServer
 
 <PageTitle>Edit ChatBot – ChatBot Admin</PageTitle>
@@ -90,32 +91,38 @@ else
 
                 <hr class="my-4" />
 
-                <h6 class="fw-semibold mb-3">Replace Widget Icon <span class="text-muted fw-normal small">(optional)</span></h6>
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    @if (!string.IsNullOrEmpty(bot.IconPath))
-                    {
-                        <img src="@bot.IconPath" alt="Current icon"
-                             style="width:56px;height:56px;object-fit:contain;border:1px solid #dee2e6;border-radius:8px;background:#f8f9fa;" />
-                        <span class="text-muted small">Current icon</span>
-                    }
-                    else
-                    {
-                        <div style="width:56px;height:56px;border:2px dashed #dee2e6;border-radius:8px;display:flex;align-items:center;justify-content:center;">
-                            <span class="text-muted small">None</span>
+                <h6 class="fw-semibold mb-3">Widget Appearance</h6>
+                <div class="d-flex align-items-start gap-4 flex-wrap mb-4">
+                    <div>
+                        <div class="text-muted small mb-1">Icon <span class="fw-normal">(optional)</span></div>
+                        @if (!string.IsNullOrEmpty(bot.IconPath))
+                        {
+                            <img src="@bot.IconPath" alt="Current icon"
+                                 style="width:48px;height:48px;object-fit:contain;border:1px solid #dee2e6;border-radius:8px;background:#f8f9fa;display:block;margin-bottom:6px;" />
+                        }
+                        <InputFile OnChange="HandleIconSelected" class="form-control form-control-sm" accept=".png,.jpg,.jpeg,.webp,.svg" style="max-width:240px;" />
+                        <div class="form-text">96×96 PNG recommended. Max 2 MB.</div>
+                        @if (!string.IsNullOrEmpty(iconFileName))
+                        {
+                            <div class="form-text text-success">New icon: @iconFileName</div>
+                        }
+                        @if (!string.IsNullOrEmpty(iconError))
+                        {
+                            <div class="text-danger small">@iconError</div>
+                        }
+                    </div>
+                    <div>
+                        <div class="text-muted small mb-1">Brand Color <span class="fw-normal">(optional)</span></div>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="color" @bind="model.BrandColor" class="form-control form-control-color" style="width:48px;height:38px;padding:2px;" title="Pick a color" />
+                            <input type="text" @bind="model.BrandColor" class="form-control form-control-sm" style="max-width:100px;" placeholder="@DefaultBrandColor" maxlength="7" />
+                            @if (!string.IsNullOrEmpty(model.BrandColor))
+                            {
+                                <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => model.BrandColor = string.Empty" title="Reset to default">✕</button>
+                            }
                         </div>
-                    }
-                </div>
-                <div class="mb-4">
-                    <InputFile OnChange="HandleIconSelected" class="form-control" accept=".png,.jpg,.jpeg,.webp,.svg" />
-                    <div class="form-text">96×96 PNG with transparency recommended. Max 2 MB.</div>
-                    @if (!string.IsNullOrEmpty(iconFileName))
-                    {
-                        <div class="form-text text-success">New icon selected: @iconFileName</div>
-                    }
-                    @if (!string.IsNullOrEmpty(iconError))
-                    {
-                        <div class="text-danger small">@iconError</div>
-                    }
+                        <div class="form-text">Widget header &amp; bubble color. Default: <code>@DefaultBrandColor</code></div>
+                    </div>
                 </div>
 
                 @if (!string.IsNullOrEmpty(submitError))
@@ -159,6 +166,8 @@ else
 @code {
     [Parameter] public Guid Id { get; set; }
 
+    private string DefaultBrandColor => Config["Widget:DefaultBrandColor"] ?? "#499CB4";
+
     private DocumentChatBot? bot;
     private readonly EditModel model = new();
 
@@ -180,6 +189,7 @@ else
 
         model.Name             = bot.Name;
         model.Version          = bot.Version;
+        model.BrandColor       = string.IsNullOrEmpty(bot.BrandColor) ? DefaultBrandColor : bot.BrandColor;
         model.Greeting         = bot.Greeting;
         model.Instructions     = bot.Instructions;
         model.ChatInstructions = bot.ChatInstructions;
@@ -249,6 +259,7 @@ else
                     model.Name,
                     model.Version,
                     model.Greeting,
+                    model.BrandColor,
                     model.Instructions,
                     model.ChatInstructions,
                     newFileStream: docStream,
@@ -278,6 +289,7 @@ else
         [System.ComponentModel.DataAnnotations.Required]
         public string Version { get; set; } = string.Empty;
 
+        public string BrandColor       { get; set; } = string.Empty;
         public string Greeting         { get; set; } = string.Empty;
         public string Instructions     { get; set; } = string.Empty;
         public string ChatInstructions { get; set; } = string.Empty;

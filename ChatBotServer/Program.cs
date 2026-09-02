@@ -124,7 +124,7 @@ app.MapGet("/api/info/{orgId:guid}", async (
     var bot = await db.DocumentChatBots
         .AsNoTracking()
         .Where(x => x.Id == orgId)
-        .Select(x => new { x.Id, x.Name, x.Version, x.Status, x.IconPath, x.Greeting })
+        .Select(x => new { x.Id, x.Name, x.Version, x.Status, x.IconPath, x.Greeting, x.BrandColor })
         .FirstOrDefaultAsync(ct);
 
     return bot is null ? Results.NotFound() : Results.Ok(bot);

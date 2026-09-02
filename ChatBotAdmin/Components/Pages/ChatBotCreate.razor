@@ -2,6 +2,7 @@
 @using ChatBotAdmin.Services
 @inject DocumentChatBotService Svc
 @inject NavigationManager Nav
+@inject IConfiguration Config
 @rendermode InteractiveServer
 
 <PageTitle>New Document ChatBot – ChatBot Admin</PageTitle>
@@ -40,17 +41,34 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">Widget Icon <span class="text-muted fw-normal">(optional)</span></label>
-                <InputFile OnChange="HandleIconSelected" class="form-control" accept=".png,.jpg,.jpeg,.webp,.svg" />
-                <div class="form-text">96×96 PNG with transparency recommended. Max 2 MB.</div>
-                @if (!string.IsNullOrEmpty(iconFileName))
-                {
-                    <div class="form-text text-success">Selected: @iconFileName</div>
-                }
-                @if (!string.IsNullOrEmpty(iconError))
-                {
-                    <div class="text-danger small">@iconError</div>
-                }
+                <label class="form-label fw-semibold">Widget Appearance <span class="text-muted fw-normal">(optional)</span></label>
+                <div class="d-flex align-items-start gap-4 flex-wrap">
+                    <div>
+                        <div class="text-muted small mb-1">Icon</div>
+                        <InputFile OnChange="HandleIconSelected" class="form-control form-control-sm" accept=".png,.jpg,.jpeg,.webp,.svg" style="max-width:240px;" />
+                        <div class="form-text">96×96 PNG with transparency recommended. Max 2 MB.</div>
+                        @if (!string.IsNullOrEmpty(iconFileName))
+                        {
+                            <div class="form-text text-success">Selected: @iconFileName</div>
+                        }
+                        @if (!string.IsNullOrEmpty(iconError))
+                        {
+                            <div class="text-danger small">@iconError</div>
+                        }
+                    </div>
+                    <div>
+                        <div class="text-muted small mb-1">Brand Color</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="color" @bind="model.BrandColor" class="form-control form-control-color" style="width:48px;height:38px;padding:2px;" title="Pick a color" />
+                            <input type="text" @bind="model.BrandColor" class="form-control form-control-sm" style="max-width:100px;" placeholder="@DefaultBrandColor" maxlength="7" />
+                            @if (!string.IsNullOrEmpty(model.BrandColor))
+                            {
+                                <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => model.BrandColor = string.Empty" title="Reset to default">✕</button>
+                            }
+                        </div>
+                        <div class="form-text">Widget header &amp; bubble color. Default: <code>@DefaultBrandColor</code></div>
+                    </div>
+                </div>
             </div>
 
             <div class="mb-3">
@@ -116,6 +134,8 @@
 </div>
 
 @code {
+    private string DefaultBrandColor => Config["Widget:DefaultBrandColor"] ?? "#499CB4";
+
     private readonly CreateModel model = new();
     private IBrowserFile? selectedFile;
     private string selectedFileName = string.Empty;
@@ -125,6 +145,12 @@
     private string iconError = string.Empty;
     private string submitError = string.Empty;
     private bool busy;
+
+    protected override void OnInitialized()
+    {
+        // Pre-fill the color picker with the configured default so it never shows black
+        model.BrandColor = DefaultBrandColor;
+    }
 
     private void HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -195,6 +221,7 @@
                 model.Instructions,
                 model.ChatInstructions,
                 model.Greeting,
+                model.BrandColor,
                 stream,
                 selectedFile.Name);
 
@@ -221,6 +248,7 @@
         [System.ComponentModel.DataAnnotations.Required]
         public string Version { get; set; } = "V1.0";
 
+        public string BrandColor { get; set; } = string.Empty;
         public string Greeting { get; set; } = string.Empty;
         public string Instructions { get; set; } = string.Empty;
         public string ChatInstructions { get; set; } = string.Empty;

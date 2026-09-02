@@ -76,6 +76,7 @@ public class DocumentChatBotService(
         string instructions,
         string chatInstructions,
         string greeting,
+        string brandColor,
         Stream fileStream,
         string originalFileName,
         CancellationToken ct = default)
@@ -97,6 +98,7 @@ public class DocumentChatBotService(
             Instructions     = instructions,
             ChatInstructions = chatInstructions,
             Greeting         = greeting,
+            BrandColor       = brandColor,
             DocumentFileName = originalFileName,
             StoredFilePath   = storedName,
             Status           = ProcessingStatus.Processing,
@@ -119,6 +121,7 @@ public class DocumentChatBotService(
         string  name,
         string  version,
         string  greeting,
+        string  brandColor,
         string  instructions,
         string  chatInstructions,
         Stream? newFileStream   = null,
@@ -131,6 +134,7 @@ public class DocumentChatBotService(
         record.Name             = name;
         record.Version          = version;
         record.Greeting         = greeting;
+        record.BrandColor       = brandColor;
         record.Instructions     = instructions;
         record.ChatInstructions = chatInstructions;
 
