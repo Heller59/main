@@ -50,7 +50,7 @@
 
         #widget {
             position: fixed; bottom: 24px; right: 24px; z-index: 2147483647;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 15px; line-height: 1.5; color: #1a1a1a;
         }
 
@@ -71,8 +71,8 @@
             position: absolute; bottom: 68px; right: 0;
             width: 360px; max-width: calc(100vw - 32px);
             height: 520px; max-height: calc(100vh - 100px);
-            background: #fff; border-radius: 14px;
-            box-shadow: 0 12px 40px rgba(0,0,0,.18);
+            background: #fff; border-radius: 8px;
+            box-shadow: 0 4px 24px rgba(0,0,0,.20);
             display: flex; flex-direction: column; overflow: hidden;
             opacity: 0; transform: translateY(16px) scale(.96);
             pointer-events: none; transition: opacity .2s ease, transform .2s ease;
@@ -83,7 +83,7 @@
         #panel.expanded {
             position: fixed; top: 10vh; left: 10vw; right: auto; bottom: auto;
             width: 80vw; height: 80vh; max-width: 80vw; max-height: 80vh;
-            border-radius: 16px;
+            border-radius: 8px;
         }
         @media (max-width: 640px) {
             #panel.expanded {
@@ -131,7 +131,7 @@
         .msg.bot  { align-self: flex-start; }
 
         .bubble {
-            padding: 10px 13px; border-radius: 16px;
+            padding: 10px 13px; border-radius: 12px;
             font-size: 14px; line-height: 1.55; word-break: break-word;
         }
         .user .bubble {
@@ -147,10 +147,38 @@
         .msg-images a { display: block; }
         .msg-images img {
             max-width: 220px; max-height: 150px; object-fit: contain;
-            border-radius: 8px; border: 1px solid #e0e0e0;
+            border-radius: 4px; border: 1px solid #e0e0e0;
             cursor: zoom-in; transition: opacity .15s;
         }
         .msg-images img:hover { opacity: .88; }
+
+        /* ── Markdown rendered content ── */
+        .md-p   { margin: 0 0 .45em; }
+        .md-p:last-child { margin-bottom: 0; }
+        .md-h   { margin: .6em 0 .25em; font-weight: 700; color: #364D63; }
+        .md-h2  { font-size: 1em; }
+        .md-h3  { font-size: .9em; }
+        .md-quote {
+            border-left: 3px solid #499CB4; padding: 6px 12px;
+            margin: 6px 0; background: #f8f9fa; border-radius: 0 4px 4px 0;
+            font-style: italic; color: #525C66;
+        }
+        .md-list { margin: 4px 0 4px 18px; padding: 0; }
+        .md-list li { margin: 2px 0; }
+        .md-code {
+            background: #f1f3f5; padding: 1px 5px; border-radius: 3px;
+            font-size: .82em; font-family: Consolas, Monaco, monospace;
+        }
+        .md-table {
+            border-collapse: collapse; width: 100%;
+            font-size: 13px; margin: 6px 0;
+        }
+        .md-table th, .md-table td {
+            border: 1px solid #e0e0e0; padding: 5px 10px; text-align: left;
+        }
+        .md-table th { background: #f8f9fa; font-weight: 600; }
+        .md-table tr:nth-child(even) td { background: #fafafa; }
+        .md-hr { border: none; border-top: 1px solid #e0e0e0; margin: 8px 0; }
 
         /* ── Lightbox ── */
         #lightbox {
@@ -162,7 +190,7 @@
         #lightbox.open { display: flex; }
         #lightbox img {
             max-width: 100%; max-height: 100%; object-fit: contain;
-            border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,.55);
+            border-radius: 4px; box-shadow: 0 8px 40px rgba(0,0,0,.55);
         }
         #lightbox-close {
             position: absolute; top: 14px; right: 18px;
@@ -191,7 +219,7 @@
         #intro-form.hidden { display: none; }
         .intro-field {
             width: 100%; padding: 8px 12px; font-size: 14px;
-            border: 1.5px solid #ddd; border-radius: 20px;
+            border: 1.5px solid #ddd; border-radius: 6px;
             font-family: inherit; outline: none;
             transition: border-color .15s;
         }
@@ -199,10 +227,11 @@
         .intro-field::placeholder { color: #bbb; }
         #intro-start-btn {
             width: 100%; padding: 9px; font-size: 14px; font-weight: 600;
-            background: #499CB4; color: #fff; border: none; border-radius: 20px;
-            cursor: pointer; transition: background .15s;
+            background: #499CB4; color: #fff; border: none; border-radius: 4px;
+            cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,.15);
+            transition: background .15s, box-shadow .15s;
         }
-        #intro-start-btn:hover { background: #3D8BA0; }
+        #intro-start-btn:hover { background: #3D8BA0; box-shadow: 0 4px 8px rgba(0,0,0,.18); }
         .intro-skip {
             text-align: center; font-size: 12px; color: #aaa; cursor: pointer;
             background: none; border: none; font-family: inherit; padding: 0;
@@ -217,7 +246,7 @@
         #input-row.hidden { display: none; }
         #chat-input {
             flex: 1; padding: 9px 12px; font-size: 14px;
-            border: 1.5px solid #ddd; border-radius: 20px;
+            border: 1.5px solid #ddd; border-radius: 6px;
             font-family: inherit; outline: none; resize: none;
             max-height: 80px; overflow-y: auto; line-height: 1.45;
             transition: border-color .15s;
@@ -406,7 +435,7 @@
             } else {
                 togBtn.style.background = '#499CB4';
                 togBtn.style.color      = '#fff';
-                togBtn.style.boxShadow  = '0 4px 16px rgba(0,188,212,.45)';
+                togBtn.style.boxShadow  = '0 4px 16px rgba(73,156,180,.45)';
             }
         }
 
@@ -579,16 +608,111 @@
         try { return JSON.parse(s); } catch (_) { return []; }
     }
 
-    function formatAnswer(text) {
-        return esc(text)
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\n/g, '<br>');
-    }
-
+    // ── Markdown renderer ────────────────────────────────────────────────────
     function esc(s) {
         return String(s)
             .replace(/&/g,'&amp;').replace(/</g,'&lt;')
             .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Inline formatting: bold, italic, inline-code (applied to already-escaped text)
+    function inlineFmt(raw) {
+        return esc(raw)
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*([^*\n]+?)\*/g, '<em>$1</em>')
+            .replace(/_([^_\n]+?)_/g, '<em>$1</em>')
+            .replace(/`([^`]+)`/g, '<code class="md-code">$1</code>');
+    }
+
+    // Parse a markdown table block (array of raw row strings) → HTML
+    function buildTable(rows) {
+        const isSep = r => /^\|[-:\s|]+\|$/.test(r.trim());
+        const data  = rows.filter(r => !isSep(r));
+        if (!data.length) return '';
+        const cells = r => r.trim().replace(/^\||\|$/g,'').split('|').map(c => c.trim());
+        let h = '<table class="md-table"><thead><tr>';
+        cells(data[0]).forEach(c => h += `<th>${inlineFmt(c)}</th>`);
+        h += '</tr></thead><tbody>';
+        data.slice(1).forEach(row => {
+            h += '<tr>';
+            cells(row).forEach(c => h += `<td>${inlineFmt(c)}</td>`);
+            h += '</tr>';
+        });
+        return h + '</tbody></table>';
+    }
+
+    function formatAnswer(text) {
+        const lines = text.split('\n');
+        const out   = [];
+        let i = 0;
+
+        while (i < lines.length) {
+            const raw     = lines[i];
+            const trimmed = raw.trim();
+
+            // Blank line → spacing
+            if (!trimmed) {
+                if (out.length && out[out.length - 1] !== '<div class="md-p">&nbsp;</div>')
+                    out.push('<div style="height:.3em"></div>');
+                i++; continue;
+            }
+
+            // Table block
+            if (trimmed.startsWith('|')) {
+                const rows = [];
+                while (i < lines.length && lines[i].trim().startsWith('|')) { rows.push(lines[i]); i++; }
+                out.push(buildTable(rows));
+                continue;
+            }
+
+            // Blockquote
+            if (trimmed.startsWith('>')) {
+                const content = trimmed.replace(/^>\s*/, '');
+                out.push(`<div class="md-quote">${inlineFmt(content)}</div>`);
+                i++; continue;
+            }
+
+            // Horizontal rule
+            if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+                out.push('<hr class="md-hr">'); i++; continue;
+            }
+
+            // Heading
+            const hm = trimmed.match(/^(#{1,4}) (.+)/);
+            if (hm) {
+                const lvl = Math.min(hm[1].length + 2, 6);
+                out.push(`<div class="md-h md-h${lvl}">${inlineFmt(hm[2])}</div>`);
+                i++; continue;
+            }
+
+            // Unordered list
+            if (/^[-*+] /.test(trimmed)) {
+                const items = [];
+                while (i < lines.length && /^[-*+] /.test(lines[i].trim())) {
+                    items.push(`<li>${inlineFmt(lines[i].trim().replace(/^[-*+] /, ''))}</li>`);
+                    i++;
+                }
+                out.push(`<ul class="md-list">${items.join('')}</ul>`);
+                continue;
+            }
+
+            // Ordered list
+            if (/^\d+[.)]\s/.test(trimmed)) {
+                const items = [];
+                while (i < lines.length && /^\d+[.)]\s/.test(lines[i].trim())) {
+                    items.push(`<li>${inlineFmt(lines[i].trim().replace(/^\d+[.)]\s+/, ''))}</li>`);
+                    i++;
+                }
+                out.push(`<ol class="md-list">${items.join('')}</ol>`);
+                continue;
+            }
+
+            // Default paragraph line
+            out.push(`<p class="md-p">${inlineFmt(trimmed)}</p>`);
+            i++;
+        }
+
+        return out.join('');
     }
 
     function scrollBottom() { msgs.scrollTop = msgs.scrollHeight; }

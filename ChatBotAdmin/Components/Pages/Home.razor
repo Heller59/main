@@ -4,7 +4,13 @@
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
 
-<PageTitle>Dashboard – ChatBot Admin</PageTitle>
+<PageTitle>Dashboard – @AppMeta.Name</PageTitle>
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Dashboard</li>
+    </ol>
+</nav>
 
 <h1 class="mb-4">Dashboard</h1>
 

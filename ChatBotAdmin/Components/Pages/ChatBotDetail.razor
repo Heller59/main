@@ -8,7 +8,7 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PageTitle>@(bot?.Name ?? "ChatBot") – ChatBot Admin</PageTitle>
+<PageTitle>@(bot?.Name ?? "ChatBot") – @AppMeta.Name</PageTitle>
 
 @if (bot is null)
 {
@@ -99,10 +99,6 @@ else
 
                 <div>
                     <div class="fw-semibold small mb-2">Icon</div>
-                    <p class="text-muted small mb-2">
-                        Displayed in the toggle button and panel header.
-                        Recommended: <strong>96×96 PNG with transparency</strong>.
-                    </p>
                     <div class="d-flex align-items-center gap-3">
                         @if (!string.IsNullOrEmpty(bot.IconPath))
                         {
@@ -115,18 +111,9 @@ else
                                 <span class="text-muted small">None</span>
                             </div>
                         }
-                        <div>
-                            <InputFile OnChange="HandleIconSelected" accept=".png,.jpg,.jpeg,.webp,.svg" class="form-control form-control-sm mb-1" style="max-width:260px;" />
-                            @if (!string.IsNullOrEmpty(iconError))
-                            {
-                                <div class="text-danger small">@iconError</div>
-                            }
-                            @if (iconUploading)
-                            {
-                                <span class="spinner-border spinner-border-sm text-primary me-1"></span>
-                                <span class="text-muted small">Uploading…</span>
-                            }
-                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="/chatbots/@bot.Id/edit" class="btn btn-outline-secondary btn-sm">Change in Edit</a>
                     </div>
                 </div>
 
@@ -304,8 +291,6 @@ else
         bot?.Chunks.Where(c => !string.IsNullOrEmpty(c.ImagePaths)).ToList() ?? [];
     private bool showConfirm;
     private bool deleting;
-    private bool iconUploading;
-    private string iconError = string.Empty;
     private bool polling;
     private CancellationTokenSource? _pollCts;
 
@@ -343,44 +328,6 @@ else
         finally
         {
             polling = false;
-        }
-    }
-
-    private async Task HandleIconSelected(InputFileChangeEventArgs e)
-    {
-        iconError     = string.Empty;
-        iconUploading = true;
-
-        var file = e.File;
-        var allowed = new[] { ".png", ".jpg", ".jpeg", ".webp", ".svg" };
-        var ext     = Path.GetExtension(file.Name).ToLowerInvariant();
-
-        if (!allowed.Contains(ext))
-        {
-            iconError     = "Only PNG, JPG, WebP, or SVG files are supported.";
-            iconUploading = false;
-            return;
-        }
-        if (file.Size > 2 * 1024 * 1024)
-        {
-            iconError     = "Icon must be 2 MB or smaller.";
-            iconUploading = false;
-            return;
-        }
-
-        try
-        {
-            await using var stream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
-            var url   = await Svc.SaveIconAsync(Id, stream, file.Name);
-            bot!.IconPath = url;
-        }
-        catch (Exception ex)
-        {
-            iconError = $"Upload failed: {ex.Message}";
-        }
-        finally
-        {
-            iconUploading = false;
         }
     }
 

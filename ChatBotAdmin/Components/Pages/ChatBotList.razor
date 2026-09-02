@@ -5,7 +5,13 @@
 @inject ChatSessionService SessionSvc
 @rendermode InteractiveServer
 
-<PageTitle>Chat Bots – ChatBot Admin</PageTitle>
+<PageTitle>Chat Bots – @AppMeta.Name</PageTitle>
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Document Chat Bots</li>
+    </ol>
+</nav>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <a href="/chatbots/create" class="btn btn-primary">+ New ChatBot</a>

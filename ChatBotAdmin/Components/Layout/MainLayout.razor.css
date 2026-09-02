@@ -6,15 +6,23 @@
 
 main {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+article {
+    flex: 1;
 }
 
 .sidebar {
-    background-image: linear-gradient(180deg, #004D5F 0%, #002535 100%);
+    background-color: #ffffff;
+    border-right: 1px solid #CCD2D8;
 }
 
 .top-row {
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #d6d5d5;
+    background-color: #ffffff;
+    border-bottom: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,.12);
     justify-content: flex-end;
     height: 3.5rem;
     display: flex;

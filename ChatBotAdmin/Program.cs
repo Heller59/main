@@ -19,6 +19,7 @@ var ollamaBase = builder.Configuration["Ollama:BaseUrl"] ?? "http://localhost:11
 builder.Services.AddHttpClient<OllamaService>(c => c.BaseAddress = new Uri(ollamaBase));
 
 // App services
+builder.Services.AddSingleton<AppInfo>();
 builder.Services.AddScoped<DocumentChatBotService>();
 builder.Services.AddScoped<DocumentChunkerService>();
 builder.Services.AddScoped<VectorSearchService>();
