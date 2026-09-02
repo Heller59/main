@@ -94,7 +94,7 @@
 
         /* ── Header ── */
         #panel-header {
-            background: #00BCD4; color: #fff;
+            background: #499CB4; color: #fff;
             padding: 13px 16px; font-weight: 600; font-size: 15px;
             display: flex; align-items: center; gap: 8px; flex-shrink: 0;
         }
@@ -135,7 +135,7 @@
             font-size: 14px; line-height: 1.55; word-break: break-word;
         }
         .user .bubble {
-            background: #00BCD4; color: #fff; border-bottom-right-radius: 4px;
+            background: #499CB4; color: #fff; border-bottom-right-radius: 4px;
         }
         .bot .bubble {
             background: #f1f3f5; color: #1a1a1a; border-bottom-left-radius: 4px;
@@ -195,14 +195,14 @@
             font-family: inherit; outline: none;
             transition: border-color .15s;
         }
-        .intro-field:focus { border-color: #00BCD4; }
+        .intro-field:focus { border-color: #499CB4; }
         .intro-field::placeholder { color: #bbb; }
         #intro-start-btn {
             width: 100%; padding: 9px; font-size: 14px; font-weight: 600;
-            background: #00BCD4; color: #fff; border: none; border-radius: 20px;
+            background: #499CB4; color: #fff; border: none; border-radius: 20px;
             cursor: pointer; transition: background .15s;
         }
-        #intro-start-btn:hover { background: #00A5BB; }
+        #intro-start-btn:hover { background: #3D8BA0; }
         .intro-skip {
             text-align: center; font-size: 12px; color: #aaa; cursor: pointer;
             background: none; border: none; font-family: inherit; padding: 0;
@@ -222,16 +222,16 @@
             max-height: 80px; overflow-y: auto; line-height: 1.45;
             transition: border-color .15s;
         }
-        #chat-input:focus { border-color: #00BCD4; }
+        #chat-input:focus { border-color: #499CB4; }
         #chat-input::placeholder { color: #bbb; }
         #send-btn {
             width: 38px; height: 38px; border-radius: 50%; border: none;
-            background: #00BCD4; color: #fff; cursor: pointer; flex-shrink: 0;
+            background: #499CB4; color: #fff; cursor: pointer; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
             transition: background .15s, transform .1s;
         }
         #send-btn:disabled { background: #ccc; cursor: default; }
-        #send-btn:not(:disabled):hover  { background: #00A5BB; }
+        #send-btn:not(:disabled):hover  { background: #3D8BA0; }
         #send-btn:not(:disabled):active { transform: scale(.92); }
         #send-btn svg { width: 17px; height: 17px; pointer-events: none; }
     `;
@@ -350,7 +350,7 @@
 
         // ── Apply bot branding ──────────────────────────────────────────
         if (info) {
-            $('bot-title').textContent = `${info.name} – Ask a question`;
+            $('bot-title').textContent = `${info.name}`;
 
             if (info.iconPath) {
                 const iconSrc = info.iconPath.startsWith('http')
@@ -365,7 +365,7 @@
                 img.style.cssText = 'width:28px;height:28px;object-fit:contain;border-radius:50%;flex-shrink:0;';
                 $('bot-title').before(img);
             } else {
-                togBtn.style.background = '#00BCD4';
+                togBtn.style.background = '#499CB4';
                 togBtn.style.color      = '#fff';
                 togBtn.style.boxShadow  = '0 4px 16px rgba(0,188,212,.45)';
             }
