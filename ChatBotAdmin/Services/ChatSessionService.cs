@@ -37,6 +37,37 @@ public class ChatSessionService(IDbContextFactory<AppDbContext> dbFactory)
             .FirstOrDefaultAsync(s => s.Id == sessionId);
     }
 
+    /// <summary>Returns a dictionary of DocumentChatBotId → session count for all bots in one query.</summary>
+    public async Task<Dictionary<Guid, int>> GetSessionCountsAsync()
+    {
+        await using var db = await dbFactory.CreateDbContextAsync();
+        return await db.ChatSessions
+            .GroupBy(s => s.DocumentChatBotId)
+            .Select(g => new { BotId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.BotId, x => x.Count);
+    }
+
+    /// <summary>Deletes a single session and its messages.</summary>
+    public async Task DeleteSessionAsync(Guid sessionId)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync();
+        var session = await db.ChatSessions.FindAsync(sessionId);
+        if (session is null) return;
+        db.ChatSessions.Remove(session);
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>Deletes all sessions (and their messages) for a bot.</summary>
+    public async Task DeleteAllSessionsAsync(Guid botId)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync();
+        var sessions = await db.ChatSessions
+            .Where(s => s.DocumentChatBotId == botId)
+            .ToListAsync();
+        db.ChatSessions.RemoveRange(sessions);
+        await db.SaveChangesAsync();
+    }
+
     /// <summary>Total message count and session count across all bots (for dashboard).</summary>
     public async Task<(int Sessions, int Messages)> GetTotalsAsync(Guid botId)
     {

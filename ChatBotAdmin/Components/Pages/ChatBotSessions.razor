@@ -27,15 +27,23 @@ else
             <h1 class="h3 mb-1">Chat Sessions</h1>
             <span class="text-muted small">@bot.Name <span class="badge bg-secondary ms-1">@bot.Version</span></span>
         </div>
-        <div class="d-flex gap-3 text-center">
-            <div>
-                <div class="fs-4 fw-bold text-primary">@totalSessions</div>
-                <div class="text-muted small">Sessions</div>
+        <div class="d-flex gap-3 align-items-center">
+            <div class="d-flex gap-3 text-center">
+                <div>
+                    <div class="fs-4 fw-bold text-primary">@totalSessions</div>
+                    <div class="text-muted small">Sessions</div>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold text-primary">@totalMessages</div>
+                    <div class="text-muted small">Messages</div>
+                </div>
             </div>
-            <div>
-                <div class="fs-4 fw-bold text-primary">@totalMessages</div>
-                <div class="text-muted small">Messages</div>
-            </div>
+            @if (totalSessions > 0)
+            {
+                <button class="btn btn-outline-danger btn-sm ms-3" @onclick="ConfirmDeleteAll">
+                    🗑 Delete All
+                </button>
+            }
         </div>
     </div>
 
@@ -95,8 +103,13 @@ else
                                     @(session.IpAddress ?? "—")
                                 </td>
                                 <td class="align-middle text-end">
-                                    <a href="/chatbots/@BotId/sessions/@session.Id"
-                                       class="btn btn-sm btn-outline-primary">View</a>
+                                    <div class="d-flex gap-1 justify-content-end">
+                                        <a href="/chatbots/@BotId/sessions/@session.Id"
+                                           class="btn btn-sm btn-outline-primary">View</a>
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                @onclick="() => ConfirmDeleteOne(session.Id)"
+                                                title="Delete this session">🗑</button>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -122,6 +135,29 @@ else
             </div>
         }
     }
+
+    @if (showConfirm)
+    {
+        <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.4)">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@confirmTitle</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>@confirmBody</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="() => showConfirm = false">Cancel</button>
+                        <button class="btn btn-danger" @onclick="ExecuteDelete" disabled="@deleting">
+                            @if (deleting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
@@ -133,6 +169,12 @@ else
     private int totalMessages;
     private int page = 1;
     private const int pageSize = 50;
+
+    private bool showConfirm;
+    private bool deleting;
+    private string confirmTitle = string.Empty;
+    private string confirmBody  = string.Empty;
+    private Func<Task>? deleteAction;
 
     protected override async Task OnInitializedAsync()
     {
@@ -151,6 +193,40 @@ else
     {
         page = newPage;
         await LoadPage();
+    }
+
+    private void ConfirmDeleteOne(Guid sessionId)
+    {
+        confirmTitle = "Delete Session?";
+        confirmBody  = "This will permanently delete this session and all its messages.";
+        deleteAction = async () =>
+        {
+            await SessionSvc.DeleteSessionAsync(sessionId);
+            await LoadPage();
+        };
+        showConfirm = true;
+    }
+
+    private void ConfirmDeleteAll()
+    {
+        confirmTitle = "Delete All Sessions?";
+        confirmBody  = $"This will permanently delete all {totalSessions} session(s) and their messages for {bot?.Name}. This cannot be undone.";
+        deleteAction = async () =>
+        {
+            await SessionSvc.DeleteAllSessionsAsync(BotId);
+            page = 1;
+            await LoadPage();
+        };
+        showConfirm = true;
+    }
+
+    private async Task ExecuteDelete()
+    {
+        if (deleteAction is null) return;
+        deleting = true;
+        await deleteAction();
+        deleting    = false;
+        showConfirm = false;
     }
 
     private static string FormatRelative(DateTime utc)

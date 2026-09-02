@@ -47,13 +47,9 @@ else
 
     <div class="d-flex gap-2 mb-4">
         <a href="/chatbots" class="btn btn-outline-secondary">← Back to list</a>
-        <a href="/chatbots/create" class="btn btn-primary">Create new version</a>
-        <a href="/chatbots/@bot.Id/sessions" class="btn btn-outline-secondary">
-            💬 Chat Sessions
-        </a>
-        <button class="btn btn-outline-danger ms-auto" @onclick="ConfirmDelete">
-            Delete
-        </button>
+        <a href="/chatbots/@bot.Id/edit" class="btn btn-primary">✏ Edit</a>
+        <a href="/chatbots/@bot.Id/sessions" class="btn btn-outline-secondary">💬 Chat Sessions</a>
+        <button class="btn btn-outline-danger ms-auto" @onclick="ConfirmDelete">Delete</button>
     </div>
 
     <div class="row g-4 mb-4">

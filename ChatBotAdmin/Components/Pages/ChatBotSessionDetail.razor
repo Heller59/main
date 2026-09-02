@@ -3,6 +3,7 @@
 @using ChatBotAdmin.Services
 @using System.Text.Json
 @inject ChatSessionService SessionSvc
+@inject NavigationManager Nav
 @rendermode InteractiveServer
 
 <PageTitle>Session Transcript – ChatBot Admin</PageTitle>
@@ -52,10 +53,36 @@ else
         </div>
     </div>
 
+    <div class="d-flex gap-2 mb-4">
+        <a href="/chatbots/@BotId/sessions" class="btn btn-outline-secondary btn-sm">← All Sessions</a>
+        <button class="btn btn-outline-danger btn-sm ms-auto" @onclick="ConfirmDelete">🗑 Delete Session</button>
+    </div>
+
     @if (!string.IsNullOrWhiteSpace(session.UserAgent))
     {
         <div class="alert alert-light small py-2 mb-4">
             <strong>User Agent:</strong> @session.UserAgent
+        </div>
+    }
+
+    @if (showConfirm)
+    {
+        <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.4)">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header"><h5 class="modal-title">Delete Session?</h5></div>
+                    <div class="modal-body">
+                        <p>This will permanently delete this session and all @session.MessageCount message(s). This cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="() => showConfirm = false">Cancel</button>
+                        <button class="btn btn-danger" @onclick="DeleteConfirmed" disabled="@deleting">
+                            @if (deleting) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            Delete permanently
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     }
 
@@ -120,13 +147,24 @@ else
 }
 
 @code {
-    [Parameter] public Guid BotId    { get; set; }
+    [Parameter] public Guid BotId     { get; set; }
     [Parameter] public Guid SessionId { get; set; }
 
     private ChatSession? session;
+    private bool showConfirm;
+    private bool deleting;
 
     protected override async Task OnInitializedAsync()
     {
         session = await SessionSvc.GetSessionWithMessagesAsync(SessionId);
+    }
+
+    private void ConfirmDelete() => showConfirm = true;
+
+    private async Task DeleteConfirmed()
+    {
+        deleting = true;
+        await SessionSvc.DeleteSessionAsync(SessionId);
+        Nav.NavigateTo($"/chatbots/{BotId}/sessions");
     }
 }

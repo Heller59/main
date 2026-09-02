@@ -87,6 +87,34 @@ app.MapPost("/api/chat/{orgId:guid}", async (
     return Results.Ok(result);
 });
 
+// GET /api/history/{orgId}/{sessionToken}
+// Returns up to the last 30 messages for this session so the widget can restore them on page load.
+app.MapGet("/api/history/{orgId:guid}/{sessionToken}", async (
+    Guid         orgId,
+    string       sessionToken,
+    AppDbContext db,
+    CancellationToken ct) =>
+{
+    var session = await db.ChatSessions
+        .AsNoTracking()
+        .Where(s => s.DocumentChatBotId == orgId && s.SessionToken == sessionToken)
+        .FirstOrDefaultAsync(ct);
+
+    if (session is null)
+        return Results.Ok(new HistoryResponse(null, null, []));
+
+    var messages = await db.ChatMessages
+        .AsNoTracking()
+        .Where(m => m.ChatSessionId == session.Id)
+        .OrderByDescending(m => m.AskedAt)
+        .Take(30)
+        .OrderBy(m => m.AskedAt)
+        .Select(m => new HistoryMessage(m.Question, m.Answer, m.Images))
+        .ToListAsync(ct);
+
+    return Results.Ok(new HistoryResponse(session.UserName, session.UserEmail, messages));
+});
+
 // GET /api/info/{orgId}  — lightweight check: does this chatbot exist and is it ready?
 app.MapGet("/api/info/{orgId:guid}", async (
     Guid orgId,
@@ -105,3 +133,5 @@ app.MapGet("/api/info/{orgId:guid}", async (
 app.Run();
 
 record ChatRequest(string Question, string? SessionId, string? UserName, string? UserEmail);
+record HistoryMessage(string Question, string Answer, string? Images);
+record HistoryResponse(string? UserName, string? UserEmail, List<HistoryMessage> Messages);

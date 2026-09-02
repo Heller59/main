@@ -111,6 +111,70 @@ public class DocumentChatBotService(
     }
 
     // ---------------------------------------------------------------
+    // Update  (keeps the same GUID / embed script)
+    // ---------------------------------------------------------------
+
+    public async Task<DocumentChatBot> UpdateAsync(
+        Guid    id,
+        string  name,
+        string  version,
+        string  greeting,
+        string  instructions,
+        string  chatInstructions,
+        Stream? newFileStream   = null,
+        string? newFileName     = null,
+        CancellationToken ct    = default)
+    {
+        var record = await db.DocumentChatBots.FindAsync([id], ct)
+                     ?? throw new InvalidOperationException("ChatBot not found.");
+
+        record.Name             = name;
+        record.Version          = version;
+        record.Greeting         = greeting;
+        record.Instructions     = instructions;
+        record.ChatInstructions = chatInstructions;
+
+        if (newFileStream is not null && newFileName is not null)
+        {
+            // Remove existing chunks so the new document replaces them
+            var oldChunks = await db.DocumentChunks
+                .Where(c => c.DocumentChatBotId == id)
+                .ToListAsync(ct);
+            db.DocumentChunks.RemoveRange(oldChunks);
+
+            // Delete old document file from disk
+            var oldPath = Path.Combine(UploadsRoot, record.StoredFilePath);
+            if (File.Exists(oldPath)) File.Delete(oldPath);
+
+            // Save new file
+            Directory.CreateDirectory(UploadsRoot);
+            var ext        = Path.GetExtension(newFileName);
+            var storedName = $"{Guid.NewGuid()}{ext}";
+            var storedPath = Path.Combine(UploadsRoot, storedName);
+            await using (var fs = File.Create(storedPath))
+                await newFileStream.CopyToAsync(fs, ct);
+
+            record.DocumentFileName = newFileName;
+            record.StoredFilePath   = storedName;
+            record.Status           = ProcessingStatus.Processing;
+            record.ErrorMessage     = null;
+            record.ExtractedText    = string.Empty;
+            record.ChunkCount       = 0;
+
+            await db.SaveChangesAsync(ct);
+
+            // Re-run pipeline in background (same GUID, new document)
+            _ = Task.Run(() => RunPipelineAsync(record.Id, storedPath, newFileName), CancellationToken.None);
+        }
+        else
+        {
+            await db.SaveChangesAsync(ct);
+        }
+
+        return record;
+    }
+
+    // ---------------------------------------------------------------
     // Pipeline  (chunk → embed → save)
     // ---------------------------------------------------------------
 

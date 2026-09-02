@@ -2,7 +2,8 @@
 @using ChatBotAdmin.Models
 @using ChatBotAdmin.Services
 @inject DocumentChatBotService Svc
-@inject NavigationManager Nav
+@inject ChatSessionService SessionSvc
+@rendermode InteractiveServer
 
 <PageTitle>Chat Bots – ChatBot Admin</PageTitle>
 
@@ -32,17 +33,31 @@ else
                     <th>Name</th>
                     <th>Version</th>
                     <th>Status</th>
+                    <th class="text-center">Sessions</th>
                     <th>Created</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var bot in bots)
                 {
+                    var count = sessionCounts.GetValueOrDefault(bot.Id, 0);
                     <tr>
                         <td><a href="/chatbots/@bot.Id" class="btn btn-outline-secondary btn-sm">View</a></td>
                         <td class="fw-semibold">@bot.Name</td>
                         <td><span class="badge bg-secondary">@bot.Version</span></td>
                         <td><StatusBadge Status="@bot.Status" /></td>
+                        <td class="text-center">
+                            @if (count > 0)
+                            {
+                                <a href="/chatbots/@bot.Id/sessions" class="badge bg-primary text-decoration-none">
+                                    @count
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
                         <td class="text-muted small">@bot.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</td>
                     </tr>
                 }
@@ -53,7 +68,14 @@ else
 
 @code {
     private List<DocumentChatBot>? bots;
+    private Dictionary<Guid, int> sessionCounts = [];
 
-    protected override async Task OnInitializedAsync() =>
-        bots = await Svc.GetAllAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        var botsTask   = Svc.GetAllAsync();
+        var countsTask = SessionSvc.GetSessionCountsAsync();
+        await Task.WhenAll(botsTask, countsTask);
+        bots          = botsTask.Result;
+        sessionCounts = countsTask.Result;
+    }
 }

@@ -1,0 +1,285 @@
+@page "/chatbots/{Id:guid}/edit"
+@using ChatBotAdmin.Models
+@using ChatBotAdmin.Services
+@inject DocumentChatBotService Svc
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Edit ChatBot – ChatBot Admin</PageTitle>
+
+@if (bot is null)
+{
+    <p class="text-muted">Loading…</p>
+}
+else
+{
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/chatbots">Chat Bots</a></li>
+            <li class="breadcrumb-item"><a href="/chatbots/@bot.Id">@bot.Name</a></li>
+            <li class="breadcrumb-item active">Edit</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-1">Edit ChatBot</h1>
+    <p class="text-muted small mb-4">
+        The embed GUID <code>@bot.Id</code> is permanent — your existing embed scripts keep working.
+    </p>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <EditForm Model="@model" OnValidSubmit="HandleSubmit" FormName="EditChatBot">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Name</label>
+                    <InputText @bind-Value="model.Name" class="form-control" />
+                    <ValidationMessage For="() => model.Name" class="text-danger small" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Version</label>
+                    <InputText @bind-Value="model.Version" class="form-control" />
+                    <ValidationMessage For="() => model.Version" class="text-danger small" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Greeting <span class="text-muted fw-normal">(optional)</span></label>
+                    <InputTextArea @bind-Value="model.Greeting" class="form-control" rows="2"
+                                   placeholder="e.g. Hi! I'm here to help. What's your name?" />
+                    <div class="form-text">Shown when the widget opens. Invites the user to share their name.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Document Notes <span class="text-muted fw-normal">(optional)</span></label>
+                    <InputTextArea @bind-Value="model.Instructions" class="form-control" rows="3"
+                                   placeholder="Describe what this document is, its domain, audience, etc." />
+                    <div class="form-text">Background context given to the AI about the document.</div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Chat Instructions <span class="text-muted fw-normal">(optional)</span></label>
+                    <InputTextArea @bind-Value="model.ChatInstructions" class="form-control" rows="5"
+                                   placeholder="e.g. Answer only questions about login and account setup." />
+                    <div class="form-text">Sent as the system prompt with every user question.</div>
+                </div>
+
+                <hr class="my-4" />
+
+                <h6 class="fw-semibold mb-3">Replace Document <span class="text-muted fw-normal small">(optional)</span></h6>
+                <div class="alert alert-warning small py-2 mb-3">
+                    ⚠ Uploading a new document will delete all existing chunks and re-run the full pipeline.
+                    The same GUID is kept — your embed script stays valid.
+                </div>
+                <div class="card bg-light border-0 p-3 mb-3">
+                    <div class="small text-muted mb-1">Current document</div>
+                    <div class="fw-semibold">@bot.DocumentFileName</div>
+                    <div class="text-muted small">@bot.ChunkCount chunk(s) indexed · Status: @bot.Status</div>
+                </div>
+                <div class="mb-4">
+                    <InputFile OnChange="HandleFileSelected" class="form-control" accept=".docx" />
+                    @if (!string.IsNullOrEmpty(selectedFileName))
+                    {
+                        <div class="form-text text-success">New document selected: @selectedFileName</div>
+                    }
+                    @if (!string.IsNullOrEmpty(fileError))
+                    {
+                        <div class="text-danger small">@fileError</div>
+                    }
+                </div>
+
+                <hr class="my-4" />
+
+                <h6 class="fw-semibold mb-3">Replace Widget Icon <span class="text-muted fw-normal small">(optional)</span></h6>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    @if (!string.IsNullOrEmpty(bot.IconPath))
+                    {
+                        <img src="@bot.IconPath" alt="Current icon"
+                             style="width:56px;height:56px;object-fit:contain;border:1px solid #dee2e6;border-radius:8px;background:#f8f9fa;" />
+                        <span class="text-muted small">Current icon</span>
+                    }
+                    else
+                    {
+                        <div style="width:56px;height:56px;border:2px dashed #dee2e6;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                            <span class="text-muted small">None</span>
+                        </div>
+                    }
+                </div>
+                <div class="mb-4">
+                    <InputFile OnChange="HandleIconSelected" class="form-control" accept=".png,.jpg,.jpeg,.webp,.svg" />
+                    <div class="form-text">96×96 PNG with transparency recommended. Max 2 MB.</div>
+                    @if (!string.IsNullOrEmpty(iconFileName))
+                    {
+                        <div class="form-text text-success">New icon selected: @iconFileName</div>
+                    }
+                    @if (!string.IsNullOrEmpty(iconError))
+                    {
+                        <div class="text-danger small">@iconError</div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(submitError))
+                {
+                    <div class="alert alert-danger">@submitError</div>
+                }
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" disabled="@busy">
+                        @if (busy)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            <span>Saving…</span>
+                        }
+                        else
+                        {
+                            <span>Save Changes</span>
+                        }
+                    </button>
+                    <a href="/chatbots/@Id" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </EditForm>
+        </div>
+
+        <div class="col-lg-4 offset-lg-1 mt-4 mt-lg-0">
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <h6 class="card-title">Tips</h6>
+                    <ul class="small text-muted ps-3 mb-0">
+                        <li class="mb-2">Updating prompts only saves instantly — no re-processing needed.</li>
+                        <li class="mb-2">Uploading a new document clears all existing chunks and re-embeds everything. This may take a minute.</li>
+                        <li class="mb-2">Your embed script GUID never changes, so no site updates are needed after an edit.</li>
+                        <li>Chat session history is preserved across edits.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private DocumentChatBot? bot;
+    private readonly EditModel model = new();
+
+    private IBrowserFile? selectedFile;
+    private string selectedFileName = string.Empty;
+    private string fileError        = string.Empty;
+
+    private IBrowserFile? iconFile;
+    private string iconFileName = string.Empty;
+    private string iconError    = string.Empty;
+
+    private string submitError = string.Empty;
+    private bool busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bot = await Svc.GetByIdAsync(Id);
+        if (bot is null) return;
+
+        model.Name             = bot.Name;
+        model.Version          = bot.Version;
+        model.Greeting         = bot.Greeting;
+        model.Instructions     = bot.Instructions;
+        model.ChatInstructions = bot.ChatInstructions;
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        fileError = string.Empty;
+        var file  = e.File;
+
+        if (!file.Name.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
+        {
+            fileError    = "Only .docx files are supported.";
+            selectedFile = null; selectedFileName = string.Empty;
+            return;
+        }
+        if (file.Size > 50 * 1024 * 1024)
+        {
+            fileError    = "File must be 50 MB or smaller.";
+            selectedFile = null; selectedFileName = string.Empty;
+            return;
+        }
+
+        selectedFile     = file;
+        selectedFileName = file.Name;
+    }
+
+    private void HandleIconSelected(InputFileChangeEventArgs e)
+    {
+        iconError = string.Empty;
+        var file  = e.File;
+        var allowed = new[] { ".png", ".jpg", ".jpeg", ".webp", ".svg" };
+        var ext   = Path.GetExtension(file.Name).ToLowerInvariant();
+
+        if (!allowed.Contains(ext))
+        {
+            iconError = "Only PNG, JPG, WebP, or SVG files are supported.";
+            iconFile  = null; iconFileName = string.Empty;
+            return;
+        }
+        if (file.Size > 2 * 1024 * 1024)
+        {
+            iconError = "Icon must be 2 MB or smaller.";
+            iconFile  = null; iconFileName = string.Empty;
+            return;
+        }
+
+        iconFile     = file;
+        iconFileName = file.Name;
+    }
+
+    private async Task HandleSubmit()
+    {
+        busy        = true;
+        submitError = string.Empty;
+
+        try
+        {
+            Stream? docStream = null;
+            if (selectedFile is not null)
+                docStream = selectedFile.OpenReadStream(maxAllowedSize: 50 * 1024 * 1024);
+
+            await using (docStream)
+            {
+                await Svc.UpdateAsync(
+                    Id,
+                    model.Name,
+                    model.Version,
+                    model.Greeting,
+                    model.Instructions,
+                    model.ChatInstructions,
+                    newFileStream: docStream,
+                    newFileName:   selectedFile?.Name);
+            }
+
+            if (iconFile is not null)
+            {
+                await using var iconStream = iconFile.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+                await Svc.SaveIconAsync(Id, iconStream, iconFile.Name);
+            }
+
+            Nav.NavigateTo($"/chatbots/{Id}");
+        }
+        catch (Exception ex)
+        {
+            submitError = $"Save failed: {ex.Message}";
+            busy = false;
+        }
+    }
+
+    private sealed class EditModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Name { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Version { get; set; } = string.Empty;
+
+        public string Greeting         { get; set; } = string.Empty;
+        public string Instructions     { get; set; } = string.Empty;
+        public string ChatInstructions { get; set; } = string.Empty;
+    }
+}

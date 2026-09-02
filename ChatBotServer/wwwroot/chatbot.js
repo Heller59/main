@@ -15,34 +15,34 @@
     const apiUrl       = `${serverOrigin}/api/chat/${orgId}`;
     const infoUrl      = `${serverOrigin}/api/info/${orgId}`;
 
-    // ── Session state (per browser tab via sessionStorage) ────────────────
+    // ── Session state (localStorage = survives refreshes and tab closes) ─────
     const KEY_TOKEN = `chatbot_token_${orgId}`;
     const KEY_NAME  = `chatbot_name_${orgId}`;
     const KEY_EMAIL = `chatbot_email_${orgId}`;
     const KEY_INTRO = `chatbot_intro_${orgId}`;
 
-    function ss(key, val) {
+    function ls(key, val) {
         try {
-            if (val === undefined) return sessionStorage.getItem(key) || '';
-            sessionStorage.setItem(key, val);
+            if (val === undefined) return localStorage.getItem(key) || '';
+            localStorage.setItem(key, val);
         } catch (_) {}
         return val || '';
     }
 
-    // Generate a fresh UUID session token if we don't have one for this tab
-    let sessionToken = ss(KEY_TOKEN);
+    // Reuse existing token so history is restored after refresh/tab-close
+    let sessionToken = ls(KEY_TOKEN);
     if (!sessionToken) {
         sessionToken = crypto.randomUUID ? crypto.randomUUID()
             : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
                 const r = Math.random() * 16 | 0;
                 return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
             });
-        ss(KEY_TOKEN, sessionToken);
+        ls(KEY_TOKEN, sessionToken);
     }
 
-    let userName       = ss(KEY_NAME);
-    let userEmail      = ss(KEY_EMAIL);
-    let introCompleted = !!ss(KEY_INTRO);
+    let userName       = ls(KEY_NAME);
+    let userEmail      = ls(KEY_EMAIL);
+    let introCompleted = !!ls(KEY_INTRO);
 
     // ── Styles (scoped inside shadow DOM) ─────────────────────────────────
     const css = `
@@ -340,46 +340,80 @@
         openLightbox(img.src, img.alt);
     });
 
-    // ── Load bot info (name, icon, greeting) ──────────────────────────────
-    fetch(infoUrl).then(r => r.ok ? r.json() : null).then(info => {
-        if (!info) return;
+    // ── Load bot info + session history in parallel ───────────────────────
+    const historyUrl = `${serverOrigin}/api/history/${orgId}/${sessionToken}`;
 
-        $('bot-title').textContent = `${info.name} – Ask a question`;
+    Promise.all([
+        fetch(infoUrl).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(historyUrl).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([info, history]) => {
 
-        if (info.iconPath) {
-            const iconSrc = info.iconPath.startsWith('http')
-                ? info.iconPath
-                : serverOrigin + info.iconPath;
-            togBtn.innerHTML = `<img src="${iconSrc}" alt="${info.name}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">`;
-            togBtn.style.background = 'transparent';
-            togBtn.style.boxShadow  = 'none';
-            togBtn.style.border     = 'none';
-            const img = document.createElement('img');
-            img.src = iconSrc; img.alt = info.name;
-            img.style.cssText = 'width:28px;height:28px;object-fit:contain;border-radius:50%;flex-shrink:0;';
-            $('bot-title').before(img);
-        } else {
-            togBtn.style.background = '#00BCD4';
-            togBtn.style.color      = '#fff';
-            togBtn.style.boxShadow  = '0 4px 16px rgba(0,188,212,.45)';
+        // ── Apply bot branding ──────────────────────────────────────────
+        if (info) {
+            $('bot-title').textContent = `${info.name} – Ask a question`;
+
+            if (info.iconPath) {
+                const iconSrc = info.iconPath.startsWith('http')
+                    ? info.iconPath
+                    : serverOrigin + info.iconPath;
+                togBtn.innerHTML = `<img src="${iconSrc}" alt="${info.name}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">`;
+                togBtn.style.background = 'transparent';
+                togBtn.style.boxShadow  = 'none';
+                togBtn.style.border     = 'none';
+                const img = document.createElement('img');
+                img.src = iconSrc; img.alt = info.name;
+                img.style.cssText = 'width:28px;height:28px;object-fit:contain;border-radius:50%;flex-shrink:0;';
+                $('bot-title').before(img);
+            } else {
+                togBtn.style.background = '#00BCD4';
+                togBtn.style.color      = '#fff';
+                togBtn.style.boxShadow  = '0 4px 16px rgba(0,188,212,.45)';
+            }
         }
 
-        // Show greeting and intro form when the bot has a greeting and this tab hasn't done the intro yet
-        if (info.greeting && !introCompleted) {
+        // ── Restore history if we have messages ─────────────────────────
+        const messages = history?.messages ?? [];
+        if (messages.length > 0) {
+            // Fill in stored name/email from server in case localStorage was cleared
+            if (!userName && history.userName)  { userName  = history.userName;  ls(KEY_NAME,  userName); }
+            if (!userEmail && history.userEmail) { userEmail = history.userEmail; ls(KEY_EMAIL, userEmail); }
+
+            removePlaceholder();
+            messages.forEach(m => {
+                appendUserBubble(m.question);
+                const images = m.images ? tryParseJson(m.images) : [];
+                appendRestoredBotBubble(m.answer, images);
+            });
+
+            // Add a subtle "session restored" divider
+            const divider = document.createElement('div');
+            divider.style.cssText = 'text-align:center;color:#bbb;font-size:12px;padding:4px 0;';
+            divider.textContent   = '— conversation restored —';
+            msgs.appendChild(divider);
+            scrollBottom();
+
+            // History means intro was already done; ensure input is shown
+            introCompleted = true;
+            ls(KEY_INTRO, '1');
+            introForm.classList.add('hidden');
+            inputRow.classList.remove('hidden');
+
+        } else if (info?.greeting && !introCompleted) {
+            // No history and has a greeting → show the greeting + intro form
             removePlaceholder();
             appendBotBubble(info.greeting);
             introForm.classList.remove('hidden');
             inputRow.classList.add('hidden');
         }
-    }).catch(() => {});
+    });
 
     // ── Intro form ────────────────────────────────────────────────────────
     function completeIntro() {
         userName  = introName.value.trim();
         userEmail = introEmail.value.trim();
-        ss(KEY_NAME,  userName);
-        ss(KEY_EMAIL, userEmail);
-        ss(KEY_INTRO, '1');
+        ls(KEY_NAME,  userName);
+        ls(KEY_EMAIL, userEmail);
+        ls(KEY_INTRO, '1');
         introCompleted = true;
         introForm.classList.add('hidden');
         inputRow.classList.remove('hidden');
@@ -486,6 +520,24 @@
             : '';
         el.innerHTML = `<div class="bubble">${formatAnswer(answer)}</div>${imgHtml}`;
         scrollBottom();
+    }
+
+    // Restored messages look identical to live ones but are built without animation
+    function appendRestoredBotBubble(answer, images) {
+        const imgHtml = images && images.length
+            ? `<div class="msg-images">${images.map(u => {
+                const src = u.startsWith('http') ? u : serverOrigin + u;
+                return `<a href="${src}" target="_blank" rel="noopener"><img src="${src}" alt="Related image" title="Click to enlarge" loading="lazy"></a>`;
+              }).join('')}</div>`
+            : '';
+        const el = document.createElement('div');
+        el.className = 'msg bot';
+        el.innerHTML = `<div class="bubble">${formatAnswer(answer)}</div>${imgHtml}`;
+        msgs.appendChild(el);
+    }
+
+    function tryParseJson(s) {
+        try { return JSON.parse(s); } catch (_) { return []; }
     }
 
     function formatAnswer(text) {
