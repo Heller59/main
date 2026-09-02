@@ -15,6 +15,35 @@
     const apiUrl       = `${serverOrigin}/api/chat/${orgId}`;
     const infoUrl      = `${serverOrigin}/api/info/${orgId}`;
 
+    // ── Session state (per browser tab via sessionStorage) ────────────────
+    const KEY_TOKEN = `chatbot_token_${orgId}`;
+    const KEY_NAME  = `chatbot_name_${orgId}`;
+    const KEY_EMAIL = `chatbot_email_${orgId}`;
+    const KEY_INTRO = `chatbot_intro_${orgId}`;
+
+    function ss(key, val) {
+        try {
+            if (val === undefined) return sessionStorage.getItem(key) || '';
+            sessionStorage.setItem(key, val);
+        } catch (_) {}
+        return val || '';
+    }
+
+    // Generate a fresh UUID session token if we don't have one for this tab
+    let sessionToken = ss(KEY_TOKEN);
+    if (!sessionToken) {
+        sessionToken = crypto.randomUUID ? crypto.randomUUID()
+            : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        ss(KEY_TOKEN, sessionToken);
+    }
+
+    let userName       = ss(KEY_NAME);
+    let userEmail      = ss(KEY_EMAIL);
+    let introCompleted = !!ss(KEY_INTRO);
+
     // ── Styles (scoped inside shadow DOM) ─────────────────────────────────
     const css = `
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,7 +57,6 @@
         /* ── Toggle button ── */
         #toggle-btn {
             width: 56px; height: 56px; border-radius: 50%;
-            /* Neutral placeholder until the bot icon / colour loads — avoids a cyan flash */
             background: #e5e7eb; color: #9ca3af; border: none; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 16px rgba(0,0,0,.15);
@@ -92,11 +120,11 @@
         #messages::-webkit-scrollbar { width: 5px; }
         #messages::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 10px; }
 
-        #greeting {
+        #placeholder {
             text-align: center; color: #888; font-size: 13.5px;
             padding: 32px 16px; margin: auto;
         }
-        #greeting p { margin-top: 8px; }
+        #placeholder p { margin-top: 8px; }
 
         .msg { display: flex; flex-direction: column; gap: 5px; max-width: min(86%, 760px); }
         .msg.user { align-self: flex-end; }
@@ -112,7 +140,6 @@
         .bot .bubble {
             background: #f1f3f5; color: #1a1a1a; border-bottom-left-radius: 4px;
         }
-
         .bubble p + p { margin-top: .5em; }
 
         /* ── Images ── */
@@ -125,7 +152,7 @@
         }
         .msg-images img:hover { opacity: .88; }
 
-        /* ── Lightbox (enlarged image) ── */
+        /* ── Lightbox ── */
         #lightbox {
             position: fixed; inset: 0; z-index: 2147483647;
             background: rgba(0,0,0,.82);
@@ -156,11 +183,38 @@
         .typing span:nth-child(3) { animation-delay: .36s; }
         @keyframes bounce { 0%,60%,100% { transform: translateY(0); opacity:.4; } 30% { transform: translateY(-5px); opacity:1; } }
 
+        /* ── Intro form (greeting + name/email) ── */
+        #intro-form {
+            padding: 12px 16px 16px; border-top: 1px solid #eee; flex-shrink: 0;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        #intro-form.hidden { display: none; }
+        .intro-field {
+            width: 100%; padding: 8px 12px; font-size: 14px;
+            border: 1.5px solid #ddd; border-radius: 20px;
+            font-family: inherit; outline: none;
+            transition: border-color .15s;
+        }
+        .intro-field:focus { border-color: #00BCD4; }
+        .intro-field::placeholder { color: #bbb; }
+        #intro-start-btn {
+            width: 100%; padding: 9px; font-size: 14px; font-weight: 600;
+            background: #00BCD4; color: #fff; border: none; border-radius: 20px;
+            cursor: pointer; transition: background .15s;
+        }
+        #intro-start-btn:hover { background: #00A5BB; }
+        .intro-skip {
+            text-align: center; font-size: 12px; color: #aaa; cursor: pointer;
+            background: none; border: none; font-family: inherit; padding: 0;
+        }
+        .intro-skip:hover { color: #888; text-decoration: underline; }
+
         /* ── Input row ── */
         #input-row {
             padding: 10px 12px; border-top: 1px solid #eee;
             display: flex; align-items: flex-end; gap: 8px; flex-shrink: 0;
         }
+        #input-row.hidden { display: none; }
         #chat-input {
             flex: 1; padding: 9px 12px; font-size: 14px;
             border: 1.5px solid #ddd; border-radius: 20px;
@@ -202,10 +256,16 @@
                     </button>
                 </div>
                 <div id="messages" role="log" aria-live="polite">
-                    <div id="greeting">
+                    <div id="placeholder">
                         <div style="font-size:32px">💬</div>
                         <p>Hi there! Ask me anything.</p>
                     </div>
+                </div>
+                <div id="intro-form" class="hidden">
+                    <input id="intro-name"  class="intro-field" type="text"  placeholder="Your name (optional)"  autocomplete="given-name" />
+                    <input id="intro-email" class="intro-field" type="email" placeholder="Email address (optional)" autocomplete="email" />
+                    <button id="intro-start-btn">Start Chat →</button>
+                    <button class="intro-skip" id="intro-skip-btn">Skip</button>
                 </div>
                 <div id="input-row">
                     <textarea id="chat-input" rows="1" placeholder="Type a question…" aria-label="Your question"></textarea>
@@ -239,21 +299,27 @@
     document.body.appendChild(host);
 
     // ── References ────────────────────────────────────────────────────────
-    const $       = id => shadow.getElementById(id);
-    const panel   = $('panel');
-    const togBtn  = $('toggle-btn');
-    const closeBtn= $('close-btn');
-    const expandBtn = $('expand-btn');
-    const msgs    = $('messages');
-    const input   = $('chat-input');
-    const sendBtn = $('send-btn');
+    const $           = id => shadow.getElementById(id);
+    const panel       = $('panel');
+    const togBtn      = $('toggle-btn');
+    const closeBtn    = $('close-btn');
+    const expandBtn   = $('expand-btn');
+    const msgs        = $('messages');
+    const input       = $('chat-input');
+    const sendBtn     = $('send-btn');
+    const introForm   = $('intro-form');
+    const inputRow    = $('input-row');
+    const introName   = $('intro-name');
+    const introEmail  = $('intro-email');
+    const introStart  = $('intro-start-btn');
+    const introSkip   = $('intro-skip-btn');
     const lightbox      = $('lightbox');
     const lightboxImg   = lightbox.querySelector('img');
     const lightboxClose = $('lightbox-close');
 
     let busy = false;
 
-    // ── Lightbox: enlarge message images on click ────────────────────────
+    // ── Lightbox ──────────────────────────────────────────────────────────
     function openLightbox(src, alt) {
         lightboxImg.src = src;
         lightboxImg.alt = alt || 'Enlarged image';
@@ -263,67 +329,98 @@
         lightbox.classList.remove('open');
         lightboxImg.removeAttribute('src');
     }
-    lightbox.addEventListener('click', e => {
-        // Close on backdrop / close-button click, but not when clicking the image itself
-        if (e.target !== lightboxImg) closeLightbox();
-    });
+    lightbox.addEventListener('click', e => { if (e.target !== lightboxImg) closeLightbox(); });
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox();
     });
     msgs.addEventListener('click', e => {
         const img = e.target.closest('.msg-images img');
         if (!img) return;
-        e.preventDefault();               // don't follow the wrapping <a> / open a new tab
+        e.preventDefault();
         openLightbox(img.src, img.alt);
     });
 
-    // ── Load bot info (name, icon) ────────────────────────────────────────
+    // ── Load bot info (name, icon, greeting) ──────────────────────────────
     fetch(infoUrl).then(r => r.ok ? r.json() : null).then(info => {
         if (!info) return;
+
         $('bot-title').textContent = `${info.name} – Ask a question`;
+
         if (info.iconPath) {
             const iconSrc = info.iconPath.startsWith('http')
                 ? info.iconPath
                 : serverOrigin + info.iconPath;
-            // Toggle button: replace SVG with icon, drop the placeholder circle background
             togBtn.innerHTML = `<img src="${iconSrc}" alt="${info.name}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">`;
-            togBtn.style.background  = 'transparent';
-            togBtn.style.boxShadow   = 'none';
-            togBtn.style.border      = 'none';
-            // Panel header: insert icon before the title
+            togBtn.style.background = 'transparent';
+            togBtn.style.boxShadow  = 'none';
+            togBtn.style.border     = 'none';
             const img = document.createElement('img');
             img.src = iconSrc; img.alt = info.name;
             img.style.cssText = 'width:28px;height:28px;object-fit:contain;border-radius:50%;flex-shrink:0;';
             $('bot-title').before(img);
         } else {
-            // No custom icon — use the branded cyan button instead of the grey placeholder
             togBtn.style.background = '#00BCD4';
             togBtn.style.color      = '#fff';
             togBtn.style.boxShadow  = '0 4px 16px rgba(0,188,212,.45)';
         }
+
+        // Show greeting and intro form when the bot has a greeting and this tab hasn't done the intro yet
+        if (info.greeting && !introCompleted) {
+            removePlaceholder();
+            appendBotBubble(info.greeting);
+            introForm.classList.remove('hidden');
+            inputRow.classList.add('hidden');
+        }
     }).catch(() => {});
+
+    // ── Intro form ────────────────────────────────────────────────────────
+    function completeIntro() {
+        userName  = introName.value.trim();
+        userEmail = introEmail.value.trim();
+        ss(KEY_NAME,  userName);
+        ss(KEY_EMAIL, userEmail);
+        ss(KEY_INTRO, '1');
+        introCompleted = true;
+        introForm.classList.add('hidden');
+        inputRow.classList.remove('hidden');
+        // Optionally show a friendly "got it" message if a name was given
+        if (userName) {
+            appendBotBubble(`Nice to meet you, ${esc(userName)}! What would you like to know?`);
+        }
+        input.focus();
+    }
+
+    introStart.addEventListener('click', completeIntro);
+    introSkip.addEventListener('click', () => {
+        introName.value  = '';
+        introEmail.value = '';
+        completeIntro();
+    });
+    introEmail.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); completeIntro(); }
+    });
 
     // ── Panel toggle ──────────────────────────────────────────────────────
     function openPanel() {
         panel.classList.add('open');
         togBtn.setAttribute('aria-expanded', 'true');
-        input.focus();
+        if (!introForm.classList.contains('hidden')) {
+            introName.focus();
+        } else {
+            input.focus();
+        }
     }
     function closePanel() {
         panel.classList.remove('open');
         togBtn.setAttribute('aria-expanded', 'false');
     }
 
-    togBtn.addEventListener('click',  () => panel.classList.contains('open') ? closePanel() : openPanel());
+    togBtn.addEventListener('click', () => panel.classList.contains('open') ? closePanel() : openPanel());
     closeBtn.addEventListener('click', closePanel);
 
-    // ── Expand / collapse panel ──────────────────────────────────────────
-    const ICON_EXPAND = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
-        <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
-    const ICON_COLLAPSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
-        <line x1="14" y1="10" x2="21" y2="3"/><line x1="10" y1="14" x2="3" y2="21"/></svg>`;
+    // ── Expand / collapse ─────────────────────────────────────────────────
+    const ICON_EXPAND   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
+    const ICON_COLLAPSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="10" y1="14" x2="3" y2="21"/></svg>`;
 
     function setExpanded(on) {
         panel.classList.toggle('expanded', on);
@@ -340,20 +437,30 @@
         input.style.height = Math.min(input.scrollHeight, 80) + 'px';
     });
 
-    // ── Keyboard: Enter sends, Shift+Enter newline ────────────────────────
+    // ── Keyboard ─────────────────────────────────────────────────────────
     input.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
     });
     sendBtn.addEventListener('click', send);
 
     // ── Message helpers ───────────────────────────────────────────────────
-    function removeGreeting() {
-        const g = $('greeting');
-        if (g) g.remove();
+    function removePlaceholder() {
+        const p = $('placeholder');
+        if (p) p.remove();
+    }
+
+    function appendBotBubble(text) {
+        removePlaceholder();
+        const el = document.createElement('div');
+        el.className = 'msg bot';
+        el.innerHTML = `<div class="bubble">${formatAnswer(text)}</div>`;
+        msgs.appendChild(el);
+        scrollBottom();
+        return el;
     }
 
     function appendUserBubble(text) {
-        removeGreeting();
+        removePlaceholder();
         const el = document.createElement('div');
         el.className = 'msg user';
         el.innerHTML = `<div class="bubble">${esc(text)}</div>`;
@@ -382,19 +489,18 @@
     }
 
     function formatAnswer(text) {
-        // Basic Markdown-ish: bold, newlines → <br>
         return esc(text)
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
             .replace(/\n/g, '<br>');
     }
 
     function esc(s) {
-        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        return String(s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    function scrollBottom() {
-        msgs.scrollTop = msgs.scrollHeight;
-    }
+    function scrollBottom() { msgs.scrollTop = msgs.scrollHeight; }
 
     // ── Send ──────────────────────────────────────────────────────────────
     async function send() {
@@ -413,7 +519,12 @@
             const res = await fetch(apiUrl, {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ question: text }),
+                body:    JSON.stringify({
+                    question:  text,
+                    sessionId: sessionToken,
+                    userName:  userName  || null,
+                    userEmail: userEmail || null,
+                }),
             });
             if (!res.ok) throw new Error(`Server responded ${res.status}`);
             const data = await res.json();
@@ -428,7 +539,7 @@
     }
 
     function setBusy(val) {
-        busy = val;
+        busy           = val;
         sendBtn.disabled = val;
         input.disabled   = val;
     }

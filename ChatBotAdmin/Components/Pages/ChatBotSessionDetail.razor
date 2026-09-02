@@ -1,0 +1,132 @@
+@page "/chatbots/{BotId:guid}/sessions/{SessionId:guid}"
+@using ChatBotAdmin.Models
+@using ChatBotAdmin.Services
+@using System.Text.Json
+@inject ChatSessionService SessionSvc
+@rendermode InteractiveServer
+
+<PageTitle>Session Transcript – ChatBot Admin</PageTitle>
+
+@if (session is null)
+{
+    <p class="text-muted">Loading…</p>
+}
+else
+{
+    var bot = session.DocumentChatBot;
+
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/chatbots">Chat Bots</a></li>
+            <li class="breadcrumb-item"><a href="/chatbots/@BotId">@bot?.Name</a></li>
+            <li class="breadcrumb-item"><a href="/chatbots/@BotId/sessions">Sessions</a></li>
+            <li class="breadcrumb-item active">@session.StartedAt.ToLocalTime().ToString("MMM d, h:mm tt")</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="h3 mb-1">
+                Session Transcript
+                @if (!string.IsNullOrWhiteSpace(session.UserName))
+                {
+                    <span class="fs-5 fw-normal text-muted ms-2">— @session.UserName</span>
+                }
+            </h1>
+            <span class="text-muted small">
+                Started @session.StartedAt.ToLocalTime().ToString("MMMM d, yyyy h:mm tt") ·
+                @session.MessageCount message(s)
+                @if (!string.IsNullOrWhiteSpace(session.UserEmail))
+                {
+                    <span>· @session.UserEmail</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(session.IpAddress))
+                {
+                    <span>· @session.IpAddress</span>
+                }
+            </span>
+        </div>
+        <div class="text-muted small text-end">
+            <div>Token: <code class="small">@session.SessionToken[..Math.Min(8, session.SessionToken.Length)]…</code></div>
+            <div>Last active: @session.LastActivityAt.ToLocalTime().ToString("h:mm tt")</div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(session.UserAgent))
+    {
+        <div class="alert alert-light small py-2 mb-4">
+            <strong>User Agent:</strong> @session.UserAgent
+        </div>
+    }
+
+    @if (session.Messages.Count == 0)
+    {
+        <div class="card">
+            <div class="card-body text-center py-5 text-muted">No messages in this session.</div>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex flex-column gap-3">
+            @foreach (var msg in session.Messages)
+            {
+                <!-- User question -->
+                <div class="d-flex justify-content-end">
+                    <div style="max-width:75%;">
+                        <div class="rounded-3 px-3 py-2 text-white"
+                             style="background:var(--brand-primary); border-radius:18px 18px 4px 18px !important;">
+                            @msg.Question
+                        </div>
+                        <div class="text-muted small mt-1 text-end">
+                            @msg.AskedAt.ToLocalTime().ToString("h:mm:ss tt")
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bot answer -->
+                <div class="d-flex justify-content-start">
+                    <div style="max-width:75%;">
+                        <div class="rounded-3 px-3 py-2 bg-white border"
+                             style="border-radius:18px 18px 18px 4px !important; white-space:pre-wrap;">@msg.Answer</div>
+
+                        @if (!string.IsNullOrWhiteSpace(msg.Images))
+                        {
+                            var imageList = JsonSerializer.Deserialize<List<string>>(msg.Images) ?? [];
+                            @if (imageList.Count > 0)
+                            {
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    @foreach (var url in imageList)
+                                    {
+                                        <a href="@url" target="_blank">
+                                            <img src="@url" alt="Referenced image"
+                                                 style="max-height:120px;max-width:200px;object-fit:contain;border:1px solid #dee2e6;border-radius:6px;" />
+                                        </a>
+                                    }
+                                </div>
+                            }
+                        }
+
+                        <div class="text-muted small mt-1">
+                            @if (msg.DurationMs > 0)
+                            {
+                                <span>@(msg.DurationMs < 1000 ? $"{msg.DurationMs}ms" : $"{msg.DurationMs / 1000.0:F1}s")</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid BotId    { get; set; }
+    [Parameter] public Guid SessionId { get; set; }
+
+    private ChatSession? session;
+
+    protected override async Task OnInitializedAsync()
+    {
+        session = await SessionSvc.GetSessionWithMessagesAsync(SessionId);
+    }
+}

@@ -1,0 +1,165 @@
+@page "/chatbots/{BotId:guid}/sessions"
+@using ChatBotAdmin.Models
+@using ChatBotAdmin.Services
+@inject ChatSessionService SessionSvc
+@inject DocumentChatBotService BotSvc
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>Sessions – ChatBot Admin</PageTitle>
+
+@if (bot is null)
+{
+    <p class="text-muted">Loading…</p>
+}
+else
+{
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/chatbots">Chat Bots</a></li>
+            <li class="breadcrumb-item"><a href="/chatbots/@bot.Id">@bot.Name</a></li>
+            <li class="breadcrumb-item active">Sessions</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Chat Sessions</h1>
+            <span class="text-muted small">@bot.Name <span class="badge bg-secondary ms-1">@bot.Version</span></span>
+        </div>
+        <div class="d-flex gap-3 text-center">
+            <div>
+                <div class="fs-4 fw-bold text-primary">@totalSessions</div>
+                <div class="text-muted small">Sessions</div>
+            </div>
+            <div>
+                <div class="fs-4 fw-bold text-primary">@totalMessages</div>
+                <div class="text-muted small">Messages</div>
+            </div>
+        </div>
+    </div>
+
+    @if (sessions.Count == 0)
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <p class="text-muted mb-0">No chat sessions yet. Embed the widget on a page and start a conversation.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>User</th>
+                            <th>Started</th>
+                            <th>Last Active</th>
+                            <th class="text-center">Messages</th>
+                            <th>IP Address</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var session in sessions)
+                        {
+                            <tr>
+                                <td class="align-middle">
+                                    @if (!string.IsNullOrWhiteSpace(session.UserName) || !string.IsNullOrWhiteSpace(session.UserEmail))
+                                    {
+                                        <div class="fw-semibold small">@(session.UserName ?? "—")</div>
+                                        @if (!string.IsNullOrWhiteSpace(session.UserEmail))
+                                        {
+                                            <div class="text-muted small">@session.UserEmail</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small fst-italic">Anonymous</span>
+                                    }
+                                </td>
+                                <td class="align-middle">
+                                    <span class="small" title="@session.StartedAt.ToLocalTime().ToString("f")">
+                                        @session.StartedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")
+                                    </span>
+                                </td>
+                                <td class="align-middle text-muted small">
+                                    @FormatRelative(session.LastActivityAt)
+                                </td>
+                                <td class="align-middle text-center">
+                                    <span class="badge bg-secondary">@session.MessageCount</span>
+                                </td>
+                                <td class="align-middle text-muted small">
+                                    @(session.IpAddress ?? "—")
+                                </td>
+                                <td class="align-middle text-end">
+                                    <a href="/chatbots/@BotId/sessions/@session.Id"
+                                       class="btn btn-sm btn-outline-primary">View</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (totalSessions > pageSize)
+        {
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <span class="text-muted small">
+                    Showing @((page - 1) * pageSize + 1)–@Math.Min(page * pageSize, totalSessions) of @totalSessions
+                </span>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary"
+                            disabled="@(page <= 1)"
+                            @onclick="() => ChangePage(page - 1)">← Previous</button>
+                    <button class="btn btn-sm btn-outline-secondary"
+                            disabled="@(page * pageSize >= totalSessions)"
+                            @onclick="() => ChangePage(page + 1)">Next →</button>
+                </div>
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter] public Guid BotId { get; set; }
+
+    private DocumentChatBot? bot;
+    private List<ChatSession> sessions = [];
+    private int totalSessions;
+    private int totalMessages;
+    private int page = 1;
+    private const int pageSize = 50;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bot = await BotSvc.GetByIdAsync(BotId);
+        if (bot is null) return;
+        await LoadPage();
+    }
+
+    private async Task LoadPage()
+    {
+        sessions = await SessionSvc.GetSessionsAsync(BotId, page, pageSize);
+        (totalSessions, totalMessages) = await SessionSvc.GetTotalsAsync(BotId);
+    }
+
+    private async Task ChangePage(int newPage)
+    {
+        page = newPage;
+        await LoadPage();
+    }
+
+    private static string FormatRelative(DateTime utc)
+    {
+        var diff = DateTime.UtcNow - utc;
+        return diff.TotalMinutes < 1   ? "just now"
+             : diff.TotalHours   < 1   ? $"{(int)diff.TotalMinutes}m ago"
+             : diff.TotalDays    < 1   ? $"{(int)diff.TotalHours}h ago"
+             : diff.TotalDays    < 30  ? $"{(int)diff.TotalDays}d ago"
+             : utc.ToLocalTime().ToString("MMM d, yyyy");
+    }
+}

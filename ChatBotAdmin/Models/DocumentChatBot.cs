@@ -16,6 +16,9 @@ public class DocumentChatBot
     /// <summary>Chat behavior instructions — sent as the system prompt with every user question</summary>
     public string ChatInstructions { get; set; } = string.Empty;
 
+    /// <summary>Opening message shown to the user when the widget loads (optional).</summary>
+    public string Greeting { get; set; } = string.Empty;
+
     /// <summary>Original filename of the uploaded Word document</summary>
     public string DocumentFileName { get; set; } = string.Empty;
 
@@ -39,7 +42,8 @@ public class DocumentChatBot
     public int ChunkCount { get; set; }
 
     // Navigation
-    public List<DocumentChunk> Chunks { get; set; } = [];
+    public List<DocumentChunk> Chunks   { get; set; } = [];
+    public List<ChatSession>   Sessions { get; set; } = [];
 }
 
 public enum ProcessingStatus

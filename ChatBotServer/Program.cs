@@ -13,7 +13,7 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod()
               .AllowAnyHeader()));
 
-// ── SQLite (ChatBotAdmin's database — read-only by this app) ──────────────
+// ── SQLite (shared database with ChatBotAdmin) ────────────────────────────
 var dbPath = builder.Configuration["ChatBotServer:DbPath"]
     ?? throw new InvalidOperationException(
         "ChatBotServer:DbPath is required. Set it in appsettings.json.");
@@ -35,6 +35,13 @@ builder.Services.AddScoped<ChatService>();
 
 var app = builder.Build();
 
+// Apply any pending migrations (ChatBotAdmin owns migration files; ChatBotServer applies them)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 app.UseCors();
 app.UseStaticFiles(); // serves wwwroot/chatbot.js
 
@@ -52,18 +59,31 @@ if (!string.IsNullOrWhiteSpace(uploadsPath) && Directory.Exists(uploadsPath))
 // ── API ───────────────────────────────────────────────────────────────────
 
 // POST /api/chat/{orgId}
-// Body:  { "question": "..." }
+// Body:  { "question": "...", "sessionId": "uuid" }
 // Reply: { "answer": "...", "images": ["/uploads/..."] }
 app.MapPost("/api/chat/{orgId:guid}", async (
-    Guid        orgId,
-    ChatRequest request,
-    ChatService chatSvc,
+    Guid              orgId,
+    ChatRequest       request,
+    ChatService       chatSvc,
+    HttpContext       httpCtx,
     CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(request.Question))
         return Results.BadRequest(new { error = "question is required." });
 
-    var result = await chatSvc.AnswerAsync(orgId, request.Question, ct: ct);
+    var userAgent = httpCtx.Request.Headers.UserAgent.ToString();
+    var ipAddress = httpCtx.Connection.RemoteIpAddress?.ToString();
+
+    var result = await chatSvc.AnswerAsync(
+        orgId,
+        request.Question,
+        sessionToken: request.SessionId,
+        userAgent:    string.IsNullOrWhiteSpace(userAgent) ? null : userAgent,
+        ipAddress:    ipAddress,
+        userName:     request.UserName,
+        userEmail:    request.UserEmail,
+        ct:           ct);
+
     return Results.Ok(result);
 });
 
@@ -76,7 +96,7 @@ app.MapGet("/api/info/{orgId:guid}", async (
     var bot = await db.DocumentChatBots
         .AsNoTracking()
         .Where(x => x.Id == orgId)
-        .Select(x => new { x.Id, x.Name, x.Version, x.Status, x.IconPath })
+        .Select(x => new { x.Id, x.Name, x.Version, x.Status, x.IconPath, x.Greeting })
         .FirstOrDefaultAsync(ct);
 
     return bot is null ? Results.NotFound() : Results.Ok(bot);
@@ -84,4 +104,4 @@ app.MapGet("/api/info/{orgId:guid}", async (
 
 app.Run();
 
-record ChatRequest(string Question);
+record ChatRequest(string Question, string? SessionId, string? UserName, string? UserEmail);

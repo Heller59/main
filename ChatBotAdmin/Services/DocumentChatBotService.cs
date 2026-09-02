@@ -75,6 +75,7 @@ public class DocumentChatBotService(
         string version,
         string instructions,
         string chatInstructions,
+        string greeting,
         Stream fileStream,
         string originalFileName,
         CancellationToken ct = default)
@@ -95,6 +96,7 @@ public class DocumentChatBotService(
             Version          = version,
             Instructions     = instructions,
             ChatInstructions = chatInstructions,
+            Greeting         = greeting,
             DocumentFileName = originalFileName,
             StoredFilePath   = storedName,
             Status           = ProcessingStatus.Processing,

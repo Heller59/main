@@ -10,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 var dbPath = Path.Combine(builder.Environment.ContentRootPath, "chatbotadmin.db");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
+// Factory used by services that create short-lived contexts (e.g. ChatSessionService)
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+    options.UseSqlite($"Data Source={dbPath}"), ServiceLifetime.Scoped);
 
 // Ollama HTTP client — base URL from appsettings
 var ollamaBase = builder.Configuration["Ollama:BaseUrl"] ?? "http://localhost:11434";
@@ -19,6 +22,7 @@ builder.Services.AddHttpClient<OllamaService>(c => c.BaseAddress = new Uri(ollam
 builder.Services.AddScoped<DocumentChatBotService>();
 builder.Services.AddScoped<DocumentChunkerService>();
 builder.Services.AddScoped<VectorSearchService>();
+builder.Services.AddScoped<ChatSessionService>();
 
 // Blazor
 builder.Services.AddRazorComponents()

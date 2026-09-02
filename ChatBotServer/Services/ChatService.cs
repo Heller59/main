@@ -1,6 +1,7 @@
 using ChatBotServer.Data;
 using ChatBotServer.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -18,7 +19,12 @@ public partial class ChatService(AppDbContext db, OllamaService ollama, VectorSe
     public async Task<ChatAnswer> AnswerAsync(
         Guid   chatBotId,
         string question,
-        int    topK = 4,
+        string? sessionToken = null,
+        string? userAgent    = null,
+        string? ipAddress    = null,
+        string? userName     = null,
+        string? userEmail    = null,
+        int    topK          = 4,
         CancellationToken ct = default)
     {
         var bot = await db.DocumentChatBots
@@ -47,12 +53,81 @@ public partial class ChatService(AppDbContext db, OllamaService ollama, VectorSe
         var context = BuildContext(hits);
 
         var userMessage = $"CONTEXT:\n{context}\n\nQUESTION: {question}";
-        var rawAnswer   = await ollama.ChatAsync(systemPrompt, userMessage, ct);
+
+        var sw = Stopwatch.StartNew();
+        var rawAnswer = await ollama.ChatAsync(systemPrompt, userMessage, ct);
+        sw.Stop();
 
         // Extract image URLs the LLM chose to reference; strip the markers from the display text
         var (cleanAnswer, images) = ParseResponse(rawAnswer);
 
+        // ── Session logging ───────────────────────────────────────────────
+        if (!string.IsNullOrWhiteSpace(sessionToken))
+        {
+            await LogMessageAsync(chatBotId, sessionToken, question, cleanAnswer, images,
+                                  (int)sw.ElapsedMilliseconds, userAgent, ipAddress,
+                                  userName, userEmail, ct);
+        }
+
         return new ChatAnswer(cleanAnswer, images);
+    }
+
+    // ── Session / message persistence ────────────────────────────────────
+
+    private async Task LogMessageAsync(
+        Guid          chatBotId,
+        string        sessionToken,
+        string        question,
+        string        answer,
+        List<string>  images,
+        int           durationMs,
+        string?       userAgent,
+        string?       ipAddress,
+        string?       userName,
+        string?       userEmail,
+        CancellationToken ct)
+    {
+        // Find or create the session row (upsert pattern)
+        var session = await db.ChatSessions
+            .FirstOrDefaultAsync(s => s.SessionToken == sessionToken, ct);
+
+        if (session is null)
+        {
+            session = new ChatSession
+            {
+                DocumentChatBotId = chatBotId,
+                SessionToken      = sessionToken,
+                StartedAt         = DateTime.UtcNow,
+                UserAgent         = userAgent?[..Math.Min(userAgent.Length, 500)],
+                IpAddress         = ipAddress?[..Math.Min(ipAddress.Length, 64)],
+                UserName          = userName?[..Math.Min(userName.Length, 200)],
+                UserEmail         = userEmail?[..Math.Min(userEmail.Length, 200)],
+            };
+            db.ChatSessions.Add(session);
+        }
+        else if (session.UserName is null && userName is not null)
+        {
+            // Update name/email if we now have it (user may have submitted after session started)
+            session.UserName  = userName?[..Math.Min(userName.Length, 200)];
+            session.UserEmail = userEmail?[..Math.Min(userEmail.Length, 200)];
+        }
+
+        session.LastActivityAt = DateTime.UtcNow;
+        session.MessageCount++;
+
+        var imagesJson = images.Count > 0 ? JsonSerializer.Serialize(images) : null;
+
+        db.ChatMessages.Add(new ChatMessage
+        {
+            ChatSessionId = session.Id,
+            Question      = question,
+            Answer        = answer,
+            Images        = imagesJson,
+            AskedAt       = DateTime.UtcNow,
+            DurationMs    = durationMs,
+        });
+
+        await db.SaveChangesAsync(ct);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
