@@ -8,12 +8,6 @@
 
 <PageTitle>Rate Limits &amp; Usage – @AppMeta.Name</PageTitle>
 
-<nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item active">Rate Limits &amp; Usage</li>
-    </ol>
-</nav>
-
 <h1 class="h3 mb-4">Rate Limits &amp; Usage</h1>
 
 @if (loading)
@@ -22,56 +16,6 @@
 }
 else
 {
-    <!-- ── Kill Switch ──────────────────────────────────────────────────── -->
-    <div class="card mb-4 @(globalCfg.ServiceEnabled ? "" : "border-danger")">
-        <div class="card-header d-flex align-items-center justify-content-between @(globalCfg.ServiceEnabled ? "" : "bg-danger text-white")">
-            <span class="fw-semibold">
-                <span class="bi bi-shield-lock-nav-menu me-1" aria-hidden="true"></span>
-                Service Kill Switch
-            </span>
-            @if (globalCfg.ServiceEnabled)
-            {
-                <span class="badge-pill-success px-3">Service Online</span>
-            }
-            else
-            {
-                <span class="badge bg-danger px-3">Service OFFLINE</span>
-            }
-        </div>
-        <div class="card-body">
-            <p class="text-muted small mb-3">
-                Disabling the service blocks <strong>all</strong> chat requests to ChatBotServer immediately
-                and returns the message below to every widget user. Use this for emergency maintenance.
-                The change takes effect within 60&nbsp;seconds (config cache TTL).
-            </p>
-            <div class="d-flex align-items-center gap-3 mb-3">
-                <div class="form-check form-switch d-flex align-items-center mb-0">
-                    <input class="form-check-input mt-0" type="checkbox" role="switch"
-                           id="killSwitch" checked="@globalCfg.ServiceEnabled"
-                           @onchange="OnKillSwitchToggled"
-                           disabled="@savingGlobal"
-                           style="width:3rem;height:1.5rem;flex-shrink:0;" />
-                    <label class="form-check-label fw-semibold ms-2" for="killSwitch">
-                        @if (savingGlobal)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1"></span>
-                        }
-                        @(globalCfg.ServiceEnabled ? "Service Enabled" : "Service DISABLED")
-                    </label>
-                </div>
-            </div>
-            <div class="mb-3" style="max-width:600px;">
-                <label class="form-label fw-semibold small">Message shown to users when offline</label>
-                <InputText @bind-Value="globalCfg.UnavailableMessage" class="form-control"
-                           placeholder="The chat service is temporarily unavailable. Please try again later." />
-            </div>
-            @if (!string.IsNullOrEmpty(globalSaveMsg))
-            {
-                <p class="small mb-0 @(globalSaveMsg.StartsWith("✓") ? "text-success" : "text-danger")">@globalSaveMsg</p>
-            }
-        </div>
-    </div>
-
     <!-- ── Summary cards ──────────────────────────────────────────────────── -->
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-lg-3">
@@ -324,6 +268,56 @@ else
         </div>
     </div>
 
+    <!-- ── Kill Switch ──────────────────────────────────────────────────── -->
+    <div class="card mb-4 @(globalCfg.ServiceEnabled ? "" : "border-danger")">
+        <div class="card-header d-flex align-items-center justify-content-between @(globalCfg.ServiceEnabled ? "" : "bg-danger text-white")">
+            <span class="fw-semibold">
+                <span class="bi bi-shield-lock-nav-menu me-1" aria-hidden="true"></span>
+                Service Kill Switch
+            </span>
+            @if (globalCfg.ServiceEnabled)
+            {
+                <span class="badge-pill-success px-3">Service Online</span>
+            }
+            else
+            {
+                <span class="badge bg-danger px-3">Service OFFLINE</span>
+            }
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                Disabling the service blocks <strong>all</strong> chat requests to ChatBotServer immediately
+                and returns the message below to every widget user. Use this for emergency maintenance.
+                The change takes effect within 60&nbsp;seconds (config cache TTL).
+            </p>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="form-check form-switch d-flex align-items-center mb-0">
+                    <input class="form-check-input mt-0" type="checkbox" role="switch"
+                           id="killSwitch" checked="@globalCfg.ServiceEnabled"
+                           @onchange="OnKillSwitchToggled"
+                           disabled="@savingGlobal"
+                           style="width:3rem;height:1.5rem;flex-shrink:0;" />
+                    <label class="form-check-label fw-semibold ms-2" for="killSwitch">
+                        @if (savingGlobal)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        @(globalCfg.ServiceEnabled ? "Service Enabled" : "Service DISABLED")
+                    </label>
+                </div>
+            </div>
+            <div class="mb-3" style="max-width:600px;">
+                <label class="form-label fw-semibold small">Message shown to users when offline</label>
+                <InputText @bind-Value="globalCfg.UnavailableMessage" class="form-control"
+                           placeholder="The chat service is temporarily unavailable. Please try again later." />
+            </div>
+            @if (!string.IsNullOrEmpty(globalSaveMsg))
+            {
+                <p class="small mb-0 @(globalSaveMsg.StartsWith("✓") ? "text-success" : "text-danger")">@globalSaveMsg</p>
+            }
+        </div>
+    </div>
+
     <p class="text-muted small">
         <strong>Note:</strong> Request logs are retained for 7&nbsp;days and include client IP addresses.
         All times shown in UTC. Auto-refreshes every 30&nbsp;seconds.
@@ -499,6 +493,21 @@ else
             {
                 var y = barH - thrH;
                 sb.Append($"<rect x=\"{x:F1}\" y=\"{y:F1}\" width=\"{barW - 2:F1}\" height=\"{thrH:F1}\" fill=\"#EB5C55\" rx=\"1\"/>");
+            }
+            // Count label inside bar (only when bar is tall enough to fit text)
+            if (bkt.Total > 0 && totH >= 14)
+            {
+                var lx      = x + (barW - 2) / 2;
+                var textY   = barH - totH + totH - 4; // near the bottom of the bar
+                var label   = bkt.Total.ToString();
+                sb.Append($"<text x=\"{lx:F1}\" y=\"{textY:F1}\" text-anchor=\"middle\" font-size=\"9\" font-weight=\"600\" fill=\"#ffffff\">{label}</text>");
+            }
+            // For short bars, show count just above the bar
+            else if (bkt.Total > 0)
+            {
+                var lx    = x + (barW - 2) / 2;
+                var textY = barH - totH - 2;
+                sb.Append($"<text x=\"{lx:F1}\" y=\"{textY:F1}\" text-anchor=\"middle\" font-size=\"9\" font-weight=\"600\" fill=\"#3C6B85\">{bkt.Total}</text>");
             }
             // Hour label (every 6h)
             if (i % 6 == 0)

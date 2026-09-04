@@ -16,13 +16,6 @@
 }
 else
 {
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/chatbots">Document Chat Bots</a></li>
-            <li class="breadcrumb-item active">@bot.Name <span class="badge bg-secondary ms-1">@bot.Version</span></li>
-        </ol>
-    </nav>
-
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h1 class="h3 mb-1">@bot.Name</h1>
@@ -46,7 +39,7 @@ else
     }
 
     <div class="d-flex gap-2 mb-4">
-        <a href="/chatbots" class="btn btn-outline-secondary">← Back to list</a>
+        <a href="/" class="btn btn-outline-secondary">← Back to list</a>
         <a href="/chatbots/@bot.Id/edit" class="btn btn-primary">✏ Edit</a>
         <a href="/simulate/@bot.Id" target="_blank" class="btn btn-outline-secondary">▶ Simulator</a>
         <a href="/chatbots/@bot.Id/sessions" class="btn btn-outline-secondary">💬 Chat Sessions</a>
@@ -284,9 +277,9 @@ else
 
     private DocumentChatBot? bot;
 
-    // Base URL of the ChatBotServer that hosts chatbot.js — configured in appsettings.json
+    // Base URL of the ChatBotServer that hosts chatbot.js — set ChatBotServer:BaseUrl in appsettings.json
     private string ChatBotServerBaseUrl =>
-        (Config["ChatBotServer:BaseUrl"] ?? "http://192.168.1.201:5017").TrimEnd('/');
+        (Config["ChatBotServer:BaseUrl"] ?? "https://<your-chatbot-server>").TrimEnd('/');
 
     private List<DocumentChunk> ChunksWithImages =>
         bot?.Chunks.Where(c => !string.IsNullOrEmpty(c.ImagePaths)).ToList() ?? [];
@@ -338,7 +331,7 @@ else
     {
         deleting = true;
         await Svc.DeleteAsync(Id);
-        Nav.NavigateTo("/chatbots");
+        Nav.NavigateTo("/");
     }
 
     public void Dispose()

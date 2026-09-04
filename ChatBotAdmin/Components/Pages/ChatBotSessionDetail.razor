@@ -16,15 +16,6 @@ else
 {
     var bot = session.DocumentChatBot;
 
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/chatbots">Chat Bots</a></li>
-            <li class="breadcrumb-item"><a href="/chatbots/@BotId">@bot?.Name</a></li>
-            <li class="breadcrumb-item"><a href="/chatbots/@BotId/sessions">Sessions</a></li>
-            <li class="breadcrumb-item active">@session.StartedAt.ToLocalTime().ToString("MMM d, h:mm tt")</li>
-        </ol>
-    </nav>
-
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h1 class="h3 mb-1">

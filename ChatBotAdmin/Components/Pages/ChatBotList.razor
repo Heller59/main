@@ -42,6 +42,7 @@ else
                     <th>Status</th>
                     <th class="text-center">Sessions</th>
                     <th>Created</th>
+                    <th>Last Session</th>
                 </tr>
             </thead>
             <tbody>
@@ -66,6 +67,12 @@ else
                             }
                         </td>
                         <td class="text-muted small">@bot.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</td>
+                        <td class="text-muted small">
+                            @if (lastActivity.TryGetValue(bot.Id, out var last))
+                            {
+                                @last.ToLocalTime().ToString("MMM d, yyyy h:mm tt")
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -76,6 +83,7 @@ else
 @code {
     private List<DocumentChatBot>? bots;
     private Dictionary<Guid, int> sessionCounts = [];
+    private Dictionary<Guid, DateTime> lastActivity = [];
     private Timer? _pollTimer;
 
     protected override async Task OnInitializedAsync()
@@ -86,11 +94,13 @@ else
 
     private async Task Reload()
     {
-        var botsTask   = Svc.GetAllAsync();
-        var countsTask = SessionSvc.GetSessionCountsAsync();
-        await Task.WhenAll(botsTask, countsTask);
+        var botsTask     = Svc.GetAllAsync();
+        var countsTask   = SessionSvc.GetSessionCountsAsync();
+        var activityTask = SessionSvc.GetLastActivityAsync();
+        await Task.WhenAll(botsTask, countsTask, activityTask);
         bots          = botsTask.Result;
         sessionCounts = countsTask.Result;
+        lastActivity  = activityTask.Result;
     }
 
     private void StartPollingIfNeeded()

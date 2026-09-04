@@ -5,15 +5,11 @@
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
 @inject RateLimitAdminService RateSvc
+@inject ChatSessionService SessionSvc
 @rendermode InteractiveServer
+@implements IDisposable
 
 <PageTitle>Dashboard – @AppMeta.Name</PageTitle>
-
-<nav aria-label="breadcrumb" class="mb-4">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item active">Dashboard</li>
-    </ol>
-</nav>
 
 <div class="d-flex align-items-center gap-3 mb-4">
     <h1 class="mb-0">Dashboard</h1>
@@ -32,7 +28,7 @@
 {
     <div class="alert alert-danger d-flex align-items-center justify-content-between gap-3 mb-4" role="alert">
         <div class="d-flex align-items-center gap-3">
-                <span style="width:14px;height:14px;border-radius:50%;background:#fff;
+            <span style="width:14px;height:14px;border-radius:50%;background:#fff;
                          box-shadow:0 0 0 3px rgba(255,255,255,.35);flex-shrink:0;
                          animation:rl-pulse 1.6s ease-in-out infinite;"
                   aria-hidden="true"></span>
@@ -55,6 +51,7 @@
     </style>
 }
 
+@* ── Stat cards ─────────────────────────────────────────────────────────── *@
 <div class="row g-3 mb-4">
     <div class="col-sm-6 col-md-3">
         <div class="card text-center h-100">
@@ -90,15 +87,12 @@
     </div>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="/chatbots/create" class="btn btn-primary btn-sm">+ New Chat Bot</a>
-</div>
-
-@if (recent is null)
+@* ── Bot list ────────────────────────────────────────────────────────────── *@
+@if (allBots is null)
 {
     <p class="text-muted">Loading…</p>
 }
-else if (recent.Count == 0)
+else if (allBots.Count == 0)
 {
     <p class="text-muted">No ChatBots created yet. <a href="/chatbots/create">Create your first one.</a></p>
 }
@@ -112,47 +106,102 @@ else
                     <th>Name</th>
                     <th>Version</th>
                     <th>Status</th>
+                    <th class="text-center">Sessions</th>
                     <th>Created</th>
+                    <th>Last Session</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var bot in recent)
+                @foreach (var bot in allBots)
                 {
+                    var count = sessionCounts.GetValueOrDefault(bot.Id, 0);
                     <tr>
                         <td><a href="/chatbots/@bot.Id" class="btn btn-outline-secondary btn-sm">View</a></td>
-                        <td>@bot.Name</td>
+                        <td class="fw-semibold">@bot.Name</td>
                         <td><span class="badge bg-secondary">@bot.Version</span></td>
                         <td><StatusBadge Status="@bot.Status" /></td>
+                        <td class="text-center">
+                            @if (count > 0)
+                            {
+                                <a href="/chatbots/@bot.Id/sessions" class="badge bg-primary text-decoration-none">@count</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
                         <td class="text-muted small">@bot.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</td>
+                        <td class="text-muted small">
+                            @if (lastActivity.TryGetValue(bot.Id, out var last))
+                            {
+                                @last.ToLocalTime().ToString("MMM d, yyyy h:mm tt")
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
-    @if (total > 5)
-    {
-        <a href="/chatbots" class="btn btn-link p-0">View all @total →</a>
-    }
 }
 
 @code {
-    private List<DocumentChatBot>? recent;
+    private List<DocumentChatBot>? allBots;
+    private Dictionary<Guid, int> sessionCounts = [];
+    private Dictionary<Guid, DateTime> lastActivity = [];
     private int total, ready, pending, errors;
     private RateLimitConfig? serviceConfig;
     private bool serviceOnline => serviceConfig?.ServiceEnabled ?? true;
+    private Timer? _pollTimer;
 
     protected override async Task OnInitializedAsync()
     {
-        var botsTask   = Db.DocumentChatBots.OrderByDescending(x => x.CreatedAt).ToListAsync();
-        var configTask = RateSvc.GetGlobalConfigAsync();
-        await Task.WhenAll(botsTask, configTask);
-
-        var all     = botsTask.Result;
-        total       = all.Count;
-        ready       = all.Count(x => x.Status == ProcessingStatus.Ready);
-        pending     = all.Count(x => x.Status is ProcessingStatus.Pending or ProcessingStatus.Processing);
-        errors      = all.Count(x => x.Status == ProcessingStatus.Error);
-        recent      = all.Take(5).ToList();
-        serviceConfig = configTask.Result;
+        await Reload();
+        StartPollingIfNeeded();
     }
+
+    private async Task Reload()
+    {
+        var botsTask     = Db.DocumentChatBots.OrderByDescending(x => x.CreatedAt).ToListAsync();
+        var configTask   = RateSvc.GetGlobalConfigAsync();
+        var countsTask   = SessionSvc.GetSessionCountsAsync();
+        var activityTask = SessionSvc.GetLastActivityAsync();
+        await Task.WhenAll(botsTask, configTask, countsTask, activityTask);
+
+        allBots       = botsTask.Result;
+        serviceConfig = configTask.Result;
+        sessionCounts = countsTask.Result;
+        lastActivity  = activityTask.Result;
+
+        total   = allBots.Count;
+        ready   = allBots.Count(x => x.Status == ProcessingStatus.Ready);
+        pending = allBots.Count(x => x.Status is ProcessingStatus.Pending or ProcessingStatus.Processing);
+        errors  = allBots.Count(x => x.Status == ProcessingStatus.Error);
+    }
+
+    private void StartPollingIfNeeded()
+    {
+        var anyProcessing = allBots?.Any(b =>
+            b.Status is ProcessingStatus.Processing or ProcessingStatus.Pending) ?? false;
+
+        if (anyProcessing && _pollTimer is null)
+        {
+            _pollTimer = new Timer(async _ =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    await Reload();
+                    StateHasChanged();
+
+                    if (allBots?.All(b =>
+                        b.Status is not ProcessingStatus.Processing and not ProcessingStatus.Pending) ?? true)
+                    {
+                        _pollTimer?.Dispose();
+                        _pollTimer = null;
+                    }
+                });
+            }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+        }
+    }
+
+    public void Dispose() => _pollTimer?.Dispose();
 }

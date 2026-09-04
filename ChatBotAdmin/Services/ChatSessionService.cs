@@ -37,6 +37,16 @@ public class ChatSessionService(IDbContextFactory<AppDbContext> dbFactory)
             .FirstOrDefaultAsync(s => s.Id == sessionId);
     }
 
+    /// <summary>Returns a dictionary of DocumentChatBotId → most recent LastActivityAt for all bots in one query.</summary>
+    public async Task<Dictionary<Guid, DateTime>> GetLastActivityAsync()
+    {
+        await using var db = await dbFactory.CreateDbContextAsync();
+        return await db.ChatSessions
+            .GroupBy(s => s.DocumentChatBotId)
+            .Select(g => new { BotId = g.Key, Last = g.Max(s => s.LastActivityAt) })
+            .ToDictionaryAsync(x => x.BotId, x => x.Last);
+    }
+
     /// <summary>Returns a dictionary of DocumentChatBotId → session count for all bots in one query.</summary>
     public async Task<Dictionary<Guid, int>> GetSessionCountsAsync()
     {

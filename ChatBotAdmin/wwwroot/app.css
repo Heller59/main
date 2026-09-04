@@ -288,11 +288,22 @@ article > nav[aria-label="breadcrumb"] {
 
 /* ── App footer ─────────────────────────────────────────────────────────── */
 .app-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     background-color: #E7E7E7;
     border-top: 1px solid #DDDDDD;
     padding: 0.65rem 2rem;
     font-size: 0.8rem;
     color: var(--text-mid);
+    z-index: 100;
+}
+/* On desktop the sidebar is 250px wide — shift footer to match */
+@media (min-width: 641px) {
+    .app-footer {
+        left: 250px;
+    }
 }
 .app-footer a {
     color: var(--brand-primary);

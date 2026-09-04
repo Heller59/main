@@ -85,9 +85,10 @@ article {
 
     article {
         padding-top: 1.5rem;
-        padding-bottom: 3rem;
+        padding-bottom: 4rem; /* leave room for fixed footer */
     }
 }
+
 
 #blazor-error-ui {
     color-scheme: light only;
