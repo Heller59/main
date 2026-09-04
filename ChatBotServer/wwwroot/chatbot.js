@@ -741,6 +741,20 @@
                     userEmail: userEmail || null,
                 }),
             });
+            if (res.status === 429) {
+                const body = await res.json().catch(() => ({}));
+                resolveTyping(typingEl,
+                    body.error || 'You\'ve sent too many messages. Please wait a moment before trying again.',
+                    []);
+                return;
+            }
+            if (res.status === 503) {
+                const body = await res.json().catch(() => ({}));
+                resolveTyping(typingEl,
+                    body.error || 'The chat service is temporarily unavailable. Please try again later.',
+                    []);
+                return;
+            }
             if (!res.ok) throw new Error(`Server responded ${res.status}`);
             const data = await res.json();
             resolveTyping(typingEl, data.answer, data.images);

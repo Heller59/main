@@ -5,10 +5,12 @@ namespace ChatBotAdmin.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public DbSet<DocumentChatBot> DocumentChatBots => Set<DocumentChatBot>();
-    public DbSet<DocumentChunk>   DocumentChunks   => Set<DocumentChunk>();
-    public DbSet<ChatSession>     ChatSessions      => Set<ChatSession>();
-    public DbSet<ChatMessage>     ChatMessages      => Set<ChatMessage>();
+    public DbSet<DocumentChatBot> DocumentChatBots  => Set<DocumentChatBot>();
+    public DbSet<DocumentChunk>   DocumentChunks    => Set<DocumentChunk>();
+    public DbSet<ChatSession>     ChatSessions       => Set<ChatSession>();
+    public DbSet<ChatMessage>     ChatMessages       => Set<ChatMessage>();
+    public DbSet<RateLimitConfig> RateLimitConfigs  => Set<RateLimitConfig>();
+    public DbSet<RequestLog>      RequestLogs        => Set<RequestLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -64,6 +66,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Question).IsRequired();
             e.Property(x => x.Answer).IsRequired();
             e.HasIndex(x => x.ChatSessionId);
+        });
+
+        modelBuilder.Entity<RateLimitConfig>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.BotId).IsUnique(); // one row per bot (or null = global)
+        });
+
+        modelBuilder.Entity<RequestLog>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.ClientIp).HasMaxLength(64);
+            e.HasIndex(x => x.TimestampUtc);
+            e.HasIndex(x => x.BotId);
         });
     }
 }

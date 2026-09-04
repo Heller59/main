@@ -1,4 +1,5 @@
 using ChatBotServer.Data;
+using ChatBotServer.Middleware;
 using ChatBotServer.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -18,7 +19,12 @@ var dbPath = builder.Configuration["ChatBotServer:DbPath"]
     ?? throw new InvalidOperationException(
         "ChatBotServer:DbPath is required. Set it in appsettings.json.");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
+// AddDbContextFactory registers:
+//   • IDbContextFactory<AppDbContext> as Singleton  (used by RateLimitService)
+//   • AppDbContext itself as Scoped                  (used by endpoints / ChatService)
+// This avoids the captive-dependency error that occurs when AddDbContext (scoped options)
+// and AddDbContextFactory (singleton) are registered together.
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 
 // ── Ollama ────────────────────────────────────────────────────────────────
@@ -30,6 +36,7 @@ builder.Services.AddHttpClient<OllamaService>(c =>
 });
 
 // ── App services ──────────────────────────────────────────────────────────
+builder.Services.AddSingleton<RateLimitService>();
 builder.Services.AddScoped<VectorSearchService>();
 builder.Services.AddScoped<ChatService>();
 
@@ -43,6 +50,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCors();
+app.UseMiddleware<RateLimitMiddleware>();
 app.UseStaticFiles(); // serves wwwroot/chatbot.js
 
 // ── Serve images from ChatBotAdmin's Uploads folder ───────────────────────

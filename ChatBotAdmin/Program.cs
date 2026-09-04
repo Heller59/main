@@ -21,6 +21,7 @@ builder.Services.AddHttpClient<OllamaService>(c => c.BaseAddress = new Uri(ollam
 // App services
 builder.Services.AddSingleton<AppInfo>();
 builder.Services.AddScoped<DocumentChatBotService>();
+builder.Services.AddScoped<RateLimitAdminService>();
 builder.Services.AddScoped<DocumentChunkerService>();
 builder.Services.AddScoped<VectorSearchService>();
 builder.Services.AddScoped<ChatSessionService>();

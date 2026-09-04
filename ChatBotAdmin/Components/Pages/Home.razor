@@ -1,8 +1,11 @@
 @page "/"
 @using ChatBotAdmin.Data
 @using ChatBotAdmin.Models
+@using ChatBotAdmin.Services
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
+@inject RateLimitAdminService RateSvc
+@rendermode InteractiveServer
 
 <PageTitle>Dashboard – @AppMeta.Name</PageTitle>
 
@@ -12,9 +15,47 @@
     </ol>
 </nav>
 
-<h1 class="mb-4">Dashboard</h1>
+<div class="d-flex align-items-center gap-3 mb-4">
+    <h1 class="mb-0">Dashboard</h1>
+    @if (serviceConfig is not null && serviceOnline)
+    {
+        <a href="/rate-limits" class="text-decoration-none">
+            <span class="badge-pill-success" style="font-size:.75rem;font-weight:500;padding:.35em .9em;display:inline-flex;align-items:center;gap:5px;">
+                <span style="width:7px;height:7px;border-radius:50%;background:#529155;flex-shrink:0;"></span>Service Online
+            </span>
+        </a>
+    }
+</div>
 
-<div class="row g-3 mb-5">
+@* ── Kill-switch banner (only when offline) ─────────────────────────────── *@
+@if (serviceConfig is not null && !serviceConfig.ServiceEnabled)
+{
+    <div class="alert alert-danger d-flex align-items-center justify-content-between gap-3 mb-4" role="alert">
+        <div class="d-flex align-items-center gap-3">
+                <span style="width:14px;height:14px;border-radius:50%;background:#fff;
+                         box-shadow:0 0 0 3px rgba(255,255,255,.35);flex-shrink:0;
+                         animation:rl-pulse 1.6s ease-in-out infinite;"
+                  aria-hidden="true"></span>
+            <div>
+                <strong>ChatBots are OFFLINE.</strong>
+                All requests are currently blocked.
+                @if (!string.IsNullOrWhiteSpace(serviceConfig.UnavailableMessage))
+                {
+                    <span class="ms-2" style="opacity:.8;">— "@serviceConfig.UnavailableMessage"</span>
+                }
+            </div>
+        </div>
+        <a href="/rate-limits" class="btn btn-sm btn-light fw-semibold text-danger text-nowrap">Manage →</a>
+    </div>
+    <style>
+        @@keyframes rl-pulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(255,255,255,.35); }
+            50%       { box-shadow: 0 0 0 6px rgba(255,255,255,.10); }
+        }
+    </style>
+}
+
+<div class="row g-3 mb-4">
     <div class="col-sm-6 col-md-3">
         <div class="card text-center h-100">
             <div class="card-body">
@@ -97,14 +138,21 @@ else
 @code {
     private List<DocumentChatBot>? recent;
     private int total, ready, pending, errors;
+    private RateLimitConfig? serviceConfig;
+    private bool serviceOnline => serviceConfig?.ServiceEnabled ?? true;
 
     protected override async Task OnInitializedAsync()
     {
-        var all = await Db.DocumentChatBots.OrderByDescending(x => x.CreatedAt).ToListAsync();
-        total   = all.Count;
-        ready   = all.Count(x => x.Status == ProcessingStatus.Ready);
-        pending = all.Count(x => x.Status is ProcessingStatus.Pending or ProcessingStatus.Processing);
-        errors  = all.Count(x => x.Status == ProcessingStatus.Error);
-        recent  = all.Take(5).ToList();
+        var botsTask   = Db.DocumentChatBots.OrderByDescending(x => x.CreatedAt).ToListAsync();
+        var configTask = RateSvc.GetGlobalConfigAsync();
+        await Task.WhenAll(botsTask, configTask);
+
+        var all     = botsTask.Result;
+        total       = all.Count;
+        ready       = all.Count(x => x.Status == ProcessingStatus.Ready);
+        pending     = all.Count(x => x.Status is ProcessingStatus.Pending or ProcessingStatus.Processing);
+        errors      = all.Count(x => x.Status == ProcessingStatus.Error);
+        recent      = all.Take(5).ToList();
+        serviceConfig = configTask.Result;
     }
 }

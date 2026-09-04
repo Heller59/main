@@ -3,6 +3,7 @@ using System;
 using ChatBotAdmin.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ChatBotAdmin.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260904134118_AddRateLimiting")]
+    partial class AddRateLimiting
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.19");
@@ -224,12 +227,6 @@ namespace ChatBotAdmin.Migrations
 
                     b.Property<int>("RequestsPerMinute")
                         .HasColumnType("INTEGER");
-
-                    b.Property<bool>("ServiceEnabled")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("UnavailableMessage")
-                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");

@@ -1,0 +1,516 @@
+@page "/rate-limits"
+@using ChatBotAdmin.Models
+@using ChatBotAdmin.Services
+@inject RateLimitAdminService Svc
+@inject DocumentChatBotService BotSvc
+@rendermode InteractiveServer
+@implements IDisposable
+
+<PageTitle>Rate Limits &amp; Usage – @AppMeta.Name</PageTitle>
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Rate Limits &amp; Usage</li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-4">Rate Limits &amp; Usage</h1>
+
+@if (loading)
+{
+    <p class="text-muted">Loading…</p>
+}
+else
+{
+    <!-- ── Kill Switch ──────────────────────────────────────────────────── -->
+    <div class="card mb-4 @(globalCfg.ServiceEnabled ? "" : "border-danger")">
+        <div class="card-header d-flex align-items-center justify-content-between @(globalCfg.ServiceEnabled ? "" : "bg-danger text-white")">
+            <span class="fw-semibold">
+                <span class="bi bi-shield-lock-nav-menu me-1" aria-hidden="true"></span>
+                Service Kill Switch
+            </span>
+            @if (globalCfg.ServiceEnabled)
+            {
+                <span class="badge-pill-success px-3">Service Online</span>
+            }
+            else
+            {
+                <span class="badge bg-danger px-3">Service OFFLINE</span>
+            }
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                Disabling the service blocks <strong>all</strong> chat requests to ChatBotServer immediately
+                and returns the message below to every widget user. Use this for emergency maintenance.
+                The change takes effect within 60&nbsp;seconds (config cache TTL).
+            </p>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="form-check form-switch d-flex align-items-center mb-0">
+                    <input class="form-check-input mt-0" type="checkbox" role="switch"
+                           id="killSwitch" checked="@globalCfg.ServiceEnabled"
+                           @onchange="OnKillSwitchToggled"
+                           disabled="@savingGlobal"
+                           style="width:3rem;height:1.5rem;flex-shrink:0;" />
+                    <label class="form-check-label fw-semibold ms-2" for="killSwitch">
+                        @if (savingGlobal)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        @(globalCfg.ServiceEnabled ? "Service Enabled" : "Service DISABLED")
+                    </label>
+                </div>
+            </div>
+            <div class="mb-3" style="max-width:600px;">
+                <label class="form-label fw-semibold small">Message shown to users when offline</label>
+                <InputText @bind-Value="globalCfg.UnavailableMessage" class="form-control"
+                           placeholder="The chat service is temporarily unavailable. Please try again later." />
+            </div>
+            @if (!string.IsNullOrEmpty(globalSaveMsg))
+            {
+                <p class="small mb-0 @(globalSaveMsg.StartsWith("✓") ? "text-success" : "text-danger")">@globalSaveMsg</p>
+            }
+        </div>
+    </div>
+
+    <!-- ── Summary cards ──────────────────────────────────────────────────── -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <div class="display-6 fw-bold text-primary">@summary.TodayTotal.ToString("N0")</div>
+                    <div class="text-muted small mt-1">Requests Today</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <div class="display-6 fw-bold @(summary.TodayThrottled > 0 ? "text-danger" : "text-success")">
+                        @summary.TodayThrottled.ToString("N0")
+                    </div>
+                    <div class="text-muted small mt-1">Throttled Today</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <div class="display-6 fw-bold text-info">
+                        @(summary.TodayTotal > 0
+                            ? $"{100.0 * summary.TodayThrottled / summary.TodayTotal:F1}%"
+                            : "—")
+                    </div>
+                    <div class="text-muted small mt-1">Throttle Rate</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <div class="display-6 fw-bold text-secondary">@summary.UniqueIpsToday.ToString("N0")</div>
+                    <div class="text-muted small mt-1">Unique IPs Today</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 24-hour bar chart ───────────────────────────────────────────────── -->
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">Requests — Last 24 Hours</div>
+        <div class="card-body">
+            @if (hourlyStats.Count == 0)
+            {
+                <p class="text-muted small mb-0">No requests recorded in the last 24 hours.</p>
+            }
+            else
+            {
+                <div style="overflow-x:auto;">
+                    @((MarkupString)BuildBarChart())
+                </div>
+                <div class="d-flex gap-4 mt-2 justify-content-center small">
+                    <span><span style="display:inline-block;width:12px;height:12px;background:#3C6B85;border-radius:2px;margin-right:4px;"></span>Allowed</span>
+                    <span><span style="display:inline-block;width:12px;height:12px;background:#EB5C55;border-radius:2px;margin-right:4px;"></span>Throttled</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ── Per-bot table ──────────────────────────────────────────────────── -->
+    @if (botStats.Count > 0)
+    {
+        <div class="card mb-4">
+            <div class="card-header fw-semibold">Today's Activity by Bot</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Bot</th>
+                                <th class="text-end">Requests</th>
+                                <th class="text-end">Throttled</th>
+                                <th class="text-end">Throttle Rate</th>
+                                <th>Override</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var stat in botStats)
+                            {
+                                var throttleRate = stat.TodayTotal > 0
+                                    ? $"{100.0 * stat.TodayThrottled / stat.TodayTotal:F1}%"
+                                    : "—";
+                                var hasOverride = botOverrides.Any(o => o.BotId == stat.BotId);
+                                <tr>
+                                    <td class="fw-semibold">@stat.BotName</td>
+                                    <td class="text-end">@stat.TodayTotal.ToString("N0")</td>
+                                    <td class="text-end @(stat.TodayThrottled > 0 ? "text-danger" : "")">
+                                        @stat.TodayThrottled.ToString("N0")
+                                    </td>
+                                    <td class="text-end">@throttleRate</td>
+                                    <td>
+                                        @if (hasOverride)
+                                        {
+                                            var ov = botOverrides.First(o => o.BotId == stat.BotId);
+                                            <span class="badge bg-secondary">@ov.RequestsPerMinute/min · @ov.RequestsPerHour/hr</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Global defaults</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- ── Global rate-limit config ──────────────────────────────────────── -->
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">Global Rate-Limit Defaults</div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+                Applied to all bots unless a per-bot override exists. Changes take effect on
+                ChatBotServer within 60&nbsp;seconds without a restart.
+            </p>
+            <div class="row g-3 mb-3" style="max-width:700px;">
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold small">Requests / Minute</label>
+                    <InputNumber @bind-Value="globalCfg.RequestsPerMinute" class="form-control" min="1" max="1000" />
+                    <div class="form-text">per IP per bot</div>
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold small">Requests / Hour</label>
+                    <InputNumber @bind-Value="globalCfg.RequestsPerHour" class="form-control" min="1" max="10000" />
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label fw-semibold small">Requests / Day</label>
+                    <InputNumber @bind-Value="globalCfg.RequestsPerDay" class="form-control" min="1" max="100000" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch"
+                           id="rlEnabled" @bind="globalCfg.IsEnabled" />
+                    <label class="form-check-label" for="rlEnabled">Rate limiting active</label>
+                </div>
+                <div class="form-text">Uncheck to disable all limit enforcement (useful for testing).</div>
+            </div>
+            <button class="btn btn-primary btn-sm" @onclick="SaveGlobalConfig" disabled="@savingGlobal">
+                @if (savingGlobal) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Save Global Defaults
+            </button>
+            @if (!string.IsNullOrEmpty(globalSaveMsg))
+            {
+                <span class="ms-3 small @(globalSaveMsg.StartsWith("✓") ? "text-success" : "text-danger")">@globalSaveMsg</span>
+            }
+        </div>
+    </div>
+
+    <!-- ── Per-bot overrides ──────────────────────────────────────────────── -->
+    <div class="card mb-4">
+        <div class="card-header d-flex align-items-center justify-content-between fw-semibold">
+            <span>Per-Bot Rate-Limit Overrides</span>
+            <button class="btn btn-outline-primary btn-sm" @onclick="ShowAddOverride">+ Add Override</button>
+        </div>
+        <div class="card-body">
+            @if (botOverrides.Count == 0 && !showAddOverride)
+            {
+                <p class="text-muted small mb-0">No per-bot overrides configured. All bots use global defaults.</p>
+            }
+
+            @if (botOverrides.Count > 0)
+            {
+                <div class="table-responsive mb-3">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Bot</th>
+                                <th class="text-end">/ Min</th>
+                                <th class="text-end">/ Hour</th>
+                                <th class="text-end">/ Day</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var ov in botOverrides)
+                            {
+                                var botName = allBots.FirstOrDefault(b => b.Id == ov.BotId)?.Name ?? ov.BotId.ToString();
+                                <tr>
+                                    <td class="fw-semibold">@botName</td>
+                                    <td class="text-end">@ov.RequestsPerMinute</td>
+                                    <td class="text-end">@ov.RequestsPerHour</td>
+                                    <td class="text-end">@ov.RequestsPerDay</td>
+                                    <td>
+                                        @if (ov.IsEnabled)
+                                        { <span class="badge-pill-success">Active</span> }
+                                        else
+                                        { <span class="badge-pill-warning">Paused</span> }
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-outline-danger btn-sm"
+                                                @onclick="() => DeleteOverride(ov.BotId!.Value)">Remove</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            @if (showAddOverride)
+            {
+                <div class="border rounded p-3 bg-light" style="max-width:640px;">
+                    <h6 class="fw-semibold mb-3">New Per-Bot Override</h6>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Bot</label>
+                        <select class="form-select" @bind="newOverrideBotId">
+                            <option value="">— select a bot —</option>
+                            @foreach (var bot in allBots.Where(b => !botOverrides.Any(o => o.BotId == b.Id)))
+                            {
+                                <option value="@bot.Id">@bot.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-4">
+                            <label class="form-label small">/ Minute</label>
+                            <InputNumber @bind-Value="newOverride.RequestsPerMinute" class="form-control" min="1" />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label small">/ Hour</label>
+                            <InputNumber @bind-Value="newOverride.RequestsPerHour" class="form-control" min="1" />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label small">/ Day</label>
+                            <InputNumber @bind-Value="newOverride.RequestsPerDay" class="form-control" min="1" />
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveNewOverride" disabled="@savingOverride">
+                            @if (savingOverride) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            Save Override
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => showAddOverride = false">Cancel</button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(overrideSaveMsg))
+                    {
+                        <div class="mt-2 small @(overrideSaveMsg.StartsWith("✓") ? "text-success" : "text-danger")">@overrideSaveMsg</div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <p class="text-muted small">
+        <strong>Note:</strong> Request logs are retained for 7&nbsp;days and include client IP addresses.
+        All times shown in UTC. Auto-refreshes every 30&nbsp;seconds.
+        <br>All time total: <strong>@summary.AllTimeTotal.ToString("N0")</strong> requests logged.
+    </p>
+}
+
+@code {
+    // ── Data ───────────────────────────────────────────────────────────────
+    private bool loading = true;
+    private RateLimitAdminService.DaySummary summary = new(0, 0, 0, 0);
+    private List<RateLimitAdminService.HourBucket> hourlyStats = [];
+    private List<RateLimitAdminService.BotStat> botStats = [];
+    private List<RateLimitConfig> botOverrides = [];
+    private List<DocumentChatBot> allBots = [];
+    private RateLimitConfig globalCfg = new();
+
+    // ── Save state ─────────────────────────────────────────────────────────
+    private bool savingGlobal;
+    private string globalSaveMsg = string.Empty;
+    private bool savingOverride;
+    private string overrideSaveMsg = string.Empty;
+    private bool showAddOverride;
+    private string newOverrideBotId = string.Empty;
+    private RateLimitConfig newOverride = new() { RequestsPerMinute = 20, RequestsPerHour = 200, RequestsPerDay = 2_000, IsEnabled = true };
+
+    // ── Auto-refresh ───────────────────────────────────────────────────────
+    private Timer? _refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAll();
+        _refreshTimer = new Timer(_ => InvokeAsync(async () =>
+        {
+            await LoadStats();
+            StateHasChanged();
+        }), null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private async Task LoadAll()
+    {
+        loading = true;
+        var t1 = Svc.GetGlobalConfigAsync();
+        var t2 = Svc.GetBotOverridesAsync();
+        var t3 = BotSvc.GetAllAsync();
+        await Task.WhenAll(t1, t2, t3);
+        globalCfg    = t1.Result;
+        botOverrides = t2.Result;
+        allBots      = t3.Result;
+        await LoadStats();
+        loading = false;
+    }
+
+    private async Task LoadStats()
+    {
+        var t1 = Svc.GetDaySummaryAsync();
+        var t2 = Svc.GetHourlyStatsAsync();
+        var t3 = Svc.GetTodayBotStatsAsync();
+        await Task.WhenAll(t1, t2, t3);
+        summary      = t1.Result;
+        hourlyStats  = t2.Result;
+        botStats     = t3.Result;
+    }
+
+    // ── Save handlers ──────────────────────────────────────────────────────
+
+    private async Task OnKillSwitchToggled(ChangeEventArgs e)
+    {
+        globalCfg.ServiceEnabled = (bool)(e.Value ?? true);
+        await SaveGlobalConfig();
+    }
+
+    private async Task SaveGlobalConfig()
+    {
+        savingGlobal  = true;
+        globalSaveMsg = string.Empty;
+        try
+        {
+            await Svc.SaveGlobalConfigAsync(globalCfg);
+            globalCfg     = await Svc.GetGlobalConfigAsync();
+            globalSaveMsg = "✓ Saved — ChatBotServer will pick up changes within 60 seconds.";
+        }
+        catch (Exception ex)
+        {
+            globalSaveMsg = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            savingGlobal = false;
+        }
+    }
+
+    private void ShowAddOverride()
+    {
+        showAddOverride  = true;
+        newOverrideBotId = string.Empty;
+        newOverride      = new() { RequestsPerMinute = 20, RequestsPerHour = 200, RequestsPerDay = 2_000, IsEnabled = true };
+        overrideSaveMsg  = string.Empty;
+    }
+
+    private async Task SaveNewOverride()
+    {
+        overrideSaveMsg = string.Empty;
+        if (!Guid.TryParse(newOverrideBotId, out var botId))
+        {
+            overrideSaveMsg = "Please select a bot.";
+            return;
+        }
+        savingOverride = true;
+        try
+        {
+            newOverride.BotId = botId;
+            await Svc.SaveBotOverrideAsync(newOverride);
+            botOverrides    = await Svc.GetBotOverridesAsync();
+            showAddOverride = false;
+        }
+        catch (Exception ex)
+        {
+            overrideSaveMsg = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            savingOverride = false;
+        }
+    }
+
+    private async Task DeleteOverride(Guid botId)
+    {
+        await Svc.DeleteBotOverrideAsync(botId);
+        botOverrides = await Svc.GetBotOverridesAsync();
+    }
+
+    // ── Chart ──────────────────────────────────────────────────────────────
+
+    private string BuildBarChart()
+    {
+        if (hourlyStats.Count == 0) return string.Empty;
+
+        const int w = 700, h = 110, barPad = 3, labelH = 18;
+        var barH  = h - labelH;
+        var maxVal = hourlyStats.Max(b => b.Total);
+        if (maxVal == 0) maxVal = 1;
+
+        // Fill all 24 slots
+        var now    = DateTime.UtcNow;
+        var slots  = Enumerable.Range(0, 24)
+            .Select(i => now.AddHours(-(23 - i)))
+            .Select(t => new DateTime(t.Year, t.Month, t.Day, t.Hour, 0, 0, DateTimeKind.Utc))
+            .ToList();
+
+        var lookup = hourlyStats.ToDictionary(b => b.HourUtc);
+        var barW   = (w - barPad * 2) / 24.0;
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<svg viewBox=\"0 0 {w} {h}\" xmlns=\"http://www.w3.org/2000/svg\" style=\"width:100%;max-width:{w}px;display:block;\">");
+
+        for (int i = 0; i < 24; i++)
+        {
+            var x   = barPad + i * barW;
+            var bkt = lookup.TryGetValue(slots[i], out var v) ? v : new(slots[i], 0, 0);
+            var totH   = (double)bkt.Total    / maxVal * barH;
+            var thrH   = (double)bkt.Throttled / maxVal * barH;
+            var allowH = totH - thrH;
+
+            // Allowed (blue) bar
+            if (allowH > 0)
+            {
+                var y = barH - totH + thrH;
+                sb.Append($"<rect x=\"{x:F1}\" y=\"{y:F1}\" width=\"{barW - 2:F1}\" height=\"{allowH:F1}\" fill=\"#3C6B85\" rx=\"1\"/>");
+            }
+            // Throttled (red) stacked on top
+            if (thrH > 0)
+            {
+                var y = barH - thrH;
+                sb.Append($"<rect x=\"{x:F1}\" y=\"{y:F1}\" width=\"{barW - 2:F1}\" height=\"{thrH:F1}\" fill=\"#EB5C55\" rx=\"1\"/>");
+            }
+            // Hour label (every 6h)
+            if (i % 6 == 0)
+            {
+                var lx = x + barW / 2;
+                sb.Append($"<text x=\"{lx:F1}\" y=\"{h - 2}\" text-anchor=\"middle\" font-size=\"9\" fill=\"#969696\">{slots[i].ToString("HH:mm")}</text>");
+            }
+        }
+
+        sb.Append("</svg>");
+        return sb.ToString();
+    }
+
+    public void Dispose() => _refreshTimer?.Dispose();
+}
