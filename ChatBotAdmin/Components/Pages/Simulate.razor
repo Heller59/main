@@ -1,0 +1,141 @@
+@page "/simulate/{BotId:guid}"
+@using ChatBotAdmin.Components.Layout
+@layout BlankLayout
+@inject IConfiguration Config
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simulator</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sim-page {
+            width: 100%;
+            max-width: 760px;
+            padding: 2rem 1.5rem 6rem;
+        }
+
+        .sim-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(60, 107, 133, .1);
+            color: #3C6B85;
+            border: 1.5px solid #A5C2D5;
+            border-radius: 20px;
+            font-size: .75rem;
+            font-weight: 600;
+            padding: .3em .85em;
+            letter-spacing: .02em;
+            margin-bottom: 1.5rem;
+        }
+
+        .sim-badge::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #3C6B85;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #364D63;
+            margin-bottom: .5rem;
+        }
+
+        .sim-intro {
+            color: #525C66;
+            font-size: .9rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .sim-card {
+            background: #ffffff;
+            border: 1px solid #CCD2D8;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            color: #969696;
+            font-size: .875rem;
+        }
+
+        .sim-card p { margin-bottom: .5rem; }
+
+        .bot-id {
+            font-family: 'Courier New', monospace;
+            font-size: .8rem;
+            background: #f0f4f8;
+            border: 1px solid #CCD2D8;
+            border-radius: 4px;
+            padding: .2em .6em;
+            color: #525C66;
+            word-break: break-all;
+        }
+
+        .close-btn {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: #ffffff;
+            border: 1px solid #CCD2D8;
+            border-radius: 4px;
+            padding: .35rem .75rem;
+            font-size: .8rem;
+            color: #525C66;
+            cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 2px 4px rgba(0,0,0,.08);
+        }
+
+        .close-btn:hover { background: #f0f4f8; }
+    </style>
+</head>
+<body>
+
+    <button class="close-btn" onclick="window.close()">✕ Close</button>
+
+    <div class="sim-page">
+        <div class="sim-badge">Simulator</div>
+
+        <h1>ChatBot Simulator</h1>
+        <p class="sim-intro">
+            This page loads the live widget exactly as it appears when embedded in a third-party site.
+            The chatbot bubble will appear in the bottom-right corner — click it to start a session.
+        </p>
+
+        <div class="sim-card">
+            <p>The widget will appear in the <strong>bottom-right corner</strong> of this page.</p>
+            <p class="mt-2">Bot ID: <span class="bot-id">@BotId</span></p>
+        </div>
+    </div>
+
+    @* Inject the live widget script — same tag used in production embeds *@
+    <script src="@(ServerBase)/chatbot.js"
+            data-org-id="@BotId"
+            defer></script>
+
+</body>
+</html>
+
+@code {
+    [Parameter] public Guid BotId { get; set; }
+
+    private string ServerBase =>
+        Config["ChatBotServer:BaseUrl"]?.TrimEnd('/') ?? "http://localhost:5017";
+}
