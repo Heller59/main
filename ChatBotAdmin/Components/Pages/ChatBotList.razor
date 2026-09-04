@@ -4,6 +4,7 @@
 @inject DocumentChatBotService Svc
 @inject ChatSessionService SessionSvc
 @rendermode InteractiveServer
+@implements IDisposable
 
 <PageTitle>Chat Bots – @AppMeta.Name</PageTitle>
 
@@ -75,8 +76,15 @@ else
 @code {
     private List<DocumentChatBot>? bots;
     private Dictionary<Guid, int> sessionCounts = [];
+    private Timer? _pollTimer;
 
     protected override async Task OnInitializedAsync()
+    {
+        await Reload();
+        StartPollingIfNeeded();
+    }
+
+    private async Task Reload()
     {
         var botsTask   = Svc.GetAllAsync();
         var countsTask = SessionSvc.GetSessionCountsAsync();
@@ -84,4 +92,32 @@ else
         bots          = botsTask.Result;
         sessionCounts = countsTask.Result;
     }
+
+    private void StartPollingIfNeeded()
+    {
+        var anyProcessing = bots?.Any(b =>
+            b.Status is ProcessingStatus.Processing or ProcessingStatus.Pending) ?? false;
+
+        if (anyProcessing && _pollTimer is null)
+        {
+            _pollTimer = new Timer(async _ =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    await Reload();
+                    StateHasChanged();
+
+                    // Stop polling once nothing is in-flight
+                    if (bots?.All(b =>
+                        b.Status is not ProcessingStatus.Processing and not ProcessingStatus.Pending) ?? true)
+                    {
+                        _pollTimer?.Dispose();
+                        _pollTimer = null;
+                    }
+                });
+            }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+        }
+    }
+
+    public void Dispose() => _pollTimer?.Dispose();
 }
