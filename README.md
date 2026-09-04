@@ -20,6 +20,7 @@ The management UI used by administrators to create, configure, and monitor chatb
 - **Monitor chat sessions** — view conversation history per session with user details
 - **Rate Limits & Usage** page — live 24-hour bar chart, per-bot activity breakdown, global and per-bot rate-limit config, and a **kill switch** that blocks all widget traffic within 60 seconds without a server restart
 - **Dashboard** — at-a-glance totals with an inline service-online/offline status indicator
+- **Simulator** — one-click button on each chatbot's detail page opens a clean browser tab with the live widget loaded, so admins can test a bot without embedding it anywhere
 
 **Stack:** Blazor Server · EF Core 9 · SQLite · Bootstrap 5 · Inter font
 
@@ -106,6 +107,7 @@ No framework dependency — the widget is a self-contained Shadow DOM component 
 | Key | Description |
 |-----|-------------|
 | `App:Name` | Product name shown throughout the UI (default: `Mentor Chatbot`) |
+| `ChatBotServer:BaseUrl` | Public URL of ChatBotServer — used by the Simulator page to inject the widget script tag |
 | `Widget:DefaultBrandColor` | Default hex color for new chatbot widgets |
 | `Ollama:BaseUrl` | Ollama server URL (used during document processing) |
 
