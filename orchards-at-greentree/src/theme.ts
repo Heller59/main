@@ -22,9 +22,9 @@ export const colors = {
   // Collection markers
   trash: '#1A1A1A',
   trashSoft: '#F0F0F0',
-  recycle: '#39FF14',
-  recycleEdge: '#1F8A14',
-  recycleSoft: '#E8FFE2',
+  recycle: '#1E6FD9',
+  recycleEdge: '#154C99',
+  recycleSoft: '#E3EEFC',
   bulk: '#8B5E3C',
   bulkDark: '#5A3A23',
   bulkLight: '#A9744F',

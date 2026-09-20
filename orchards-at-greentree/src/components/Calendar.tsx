@@ -10,10 +10,11 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { ChevronIcon, CouchIcon, RecycleIcon, TrashIcon } from '../icons';
+import { ChevronIcon } from '../icons';
 import { fmtMonthYear, toISO, todayISO } from '../lib/dates';
 import type { CollectionEvent, EventKind } from '../lib/schedule';
 import { colors, radius, shadow, space, typography } from '../theme';
+import KindBadge from './KindBadge';
 
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const CARD_MARGIN = space(4);
@@ -44,12 +45,6 @@ function buildCells(year: number, month: number): Cell[] {
   return cells;
 }
 
-function Marker({ kind, size }: { kind: EventKind; size: number }) {
-  if (kind === 'trash') return <TrashIcon size={size} />;
-  if (kind === 'recycling') return <RecycleIcon size={size} />;
-  return <CouchIcon size={size} />;
-}
-
 interface Props {
   months: MonthRef[];
   eventsByDate: Map<string, CollectionEvent[]>;
@@ -61,7 +56,9 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
   const { width } = useWindowDimensions();
   const pageWidth = width - CARD_MARGIN * 2;
   const cellWidth = (pageWidth - GRID_PAD * 2) / 7;
-  const iconSize = Math.min(14, Math.max(10, cellWidth * 0.33));
+  // Badges share the cell width: roomy for one or two, tighter when three collide.
+  const badgeSizeFor = (count: number) =>
+    Math.min(22, Math.floor((cellWidth - 2) / Math.max(2, count)) - 2);
 
   const [index, setIndex] = useState(initialIndex);
   const listRef = useRef<FlatList<MonthRef>>(null);
@@ -146,7 +143,11 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
                   <View style={styles.markerRow}>
                     {dayEvents.slice(0, 3).map((e) => (
                       <View key={e.id} style={styles.marker}>
-                        <Marker kind={e.kind} size={iconSize} />
+                        <KindBadge
+                          kind={e.kind}
+                          size={badgeSizeFor(Math.min(dayEvents.length, 3))}
+                          glyphRatio={0.68}
+                        />
                       </View>
                     ))}
                   </View>
@@ -157,7 +158,7 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
         </View>
       );
     },
-    [cellWidth, eventsByDate, iconSize, onSelectDate, pageWidth, today],
+    [cellWidth, eventsByDate, onSelectDate, pageWidth, today],
   );
 
   const current = months[index] ?? months[0];
@@ -213,9 +214,12 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
       />
 
       <View style={styles.legend}>
-        <LegendItem icon={<TrashIcon size={15} />} label="Trash" />
-        <LegendItem icon={<RecycleIcon size={15} />} label="Recycling" />
-        <LegendItem icon={<CouchIcon size={15} />} label="Bulk" />
+        <LegendItem icon={<KindBadge kind="trash" size={24} glyphRatio={0.68} />} label="Trash" />
+        <LegendItem
+          icon={<KindBadge kind="recycling" size={24} glyphRatio={0.68} />}
+          label="Recycling"
+        />
+        <LegendItem icon={<KindBadge kind="bulk" size={24} glyphRatio={0.68} />} label="Bulk" />
       </View>
     </View>
   );
@@ -286,7 +290,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
-    minHeight: 16,
+    minHeight: 22,
   },
   marker: { marginHorizontal: 1 },
   legend: {

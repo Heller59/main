@@ -23,6 +23,7 @@ import {
   MAX_DAYS_BEFORE,
   MIN_DAYS_BEFORE,
   clampDays,
+  isZoneSelectable,
   leadLabel,
   type Settings,
 } from '../lib/settings';
@@ -206,19 +207,28 @@ export default function SettingsScreen({
             <View style={styles.zoneRow}>
               {scheduleMeta.zones.map((z) => {
                 const active = settings.zone === z;
+                const locked = !isZoneSelectable(z);
                 return (
                   <Pressable
                     key={z}
                     onPress={() => setZone(z)}
+                    disabled={locked}
                     accessibilityRole="radio"
-                    accessibilityState={{ selected: active }}
+                    accessibilityState={{ selected: active, disabled: locked }}
                     style={({ pressed }) => [
                       styles.zoneBtn,
                       active && styles.zoneBtnActive,
-                      pressed && !active && { backgroundColor: colors.mint },
+                      locked && styles.zoneBtnDisabled,
+                      pressed && !active && !locked && { backgroundColor: colors.mint },
                     ]}
                   >
-                    <Text style={[styles.zoneText, active && styles.zoneTextActive]}>
+                    <Text
+                      style={[
+                        styles.zoneText,
+                        active && styles.zoneTextActive,
+                        locked && styles.zoneTextDisabled,
+                      ]}
+                    >
                       {zoneLabel(z)}
                     </Text>
                   </Pressable>
@@ -392,6 +402,8 @@ const styles = StyleSheet.create({
   zoneBtnActive: { backgroundColor: colors.teal, borderColor: colors.teal },
   zoneText: { ...typography.small, fontWeight: '600', color: colors.inkSoft },
   zoneTextActive: { color: colors.white },
+  zoneBtnDisabled: { backgroundColor: '#F1F1F1', borderColor: '#E4E4E4' },
+  zoneTextDisabled: { color: '#B5B5B5' },
 
   aboutRow: {
     flexDirection: 'row',

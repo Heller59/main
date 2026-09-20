@@ -28,7 +28,7 @@ export function TrashIcon({ size = 20 }: IconProps) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Recycling — three neon-green chasing arrows in a Mobius triangle.    */
+/* Recycling — three blue chasing arrows in a Mobius triangle.    */
 /* One arm is drawn once and rotated 120 degrees twice; the head of     */
 /* each arm lands exactly where the next arm begins.                    */
 /* ------------------------------------------------------------------ */

@@ -167,7 +167,7 @@ A few things worth knowing:
 
 **Calendar** — opens on the current month. Swipe or use the arrows to move through
 every month in the schedule. Days with collections show their icons: black trash can,
-neon-green recycling arrows, brown couch for bulk. Tapping a day with events opens a
+blue recycling arrows, brown couch for bulk. Tapping a day with events opens a
 detail sheet; tapping an empty day does nothing.
 
 **Below the calendar** — "Coming up next" shows the next trash, next recycling and

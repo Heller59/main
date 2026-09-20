@@ -1,34 +1,9 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { CouchIcon, RecycleIcon, TrashIcon } from '../icons';
 import { MONTHS, fmtLong, fmtShort, parseISO, relativeLabel } from '../lib/dates';
-import type { CollectionEvent, EventKind } from '../lib/schedule';
+import type { CollectionEvent } from '../lib/schedule';
 import { colors, radius, shadow, space, typography } from '../theme';
-
-const TINT: Record<EventKind, string> = {
-  trash: colors.trashSoft,
-  recycling: colors.recycleSoft,
-  bulk: colors.bulkSoft,
-};
-
-function Glyph({ kind, size = 22 }: { kind: EventKind; size?: number }) {
-  if (kind === 'trash') return <TrashIcon size={size} />;
-  if (kind === 'recycling') return <RecycleIcon size={size} />;
-  return <CouchIcon size={size} />;
-}
-
-function Badge({ kind, size = 42 }: { kind: EventKind; size?: number }) {
-  return (
-    <View
-      style={[
-        styles.badge,
-        { backgroundColor: TINT[kind], width: size, height: size, borderRadius: size * 0.29 },
-      ]}
-    >
-      <Glyph kind={kind} size={size * 0.52} />
-    </View>
-  );
-}
+import Badge from './KindBadge';
 
 /** The prominent "what's next" card, one per collection typography. */
 function NextCard({ event }: { event: CollectionEvent }) {
@@ -129,7 +104,6 @@ const styles = StyleSheet.create({
     color: colors.tealDeep,
     marginBottom: space(3),
   },
-  badge: { alignItems: 'center', justifyContent: 'center' },
 
   nextCard: {
     flexDirection: 'row',

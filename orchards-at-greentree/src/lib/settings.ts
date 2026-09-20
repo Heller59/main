@@ -20,6 +20,9 @@ export const DEFAULT_SETTINGS: Settings = {
   zone: '3-4',
 };
 
+/** The Orchards is in one bulk zone; every other zone is shown but locked. */
+export const isZoneSelectable = (zone: Zone): boolean => zone === DEFAULT_SETTINGS.zone;
+
 export const REMINDER_HOUR = 12;
 export const MIN_DAYS_BEFORE = 0;
 export const MAX_DAYS_BEFORE = 14;
@@ -32,7 +35,8 @@ export async function loadSettings(): Promise<Settings> {
     return {
       notificationsEnabled: parsed.notificationsEnabled ?? DEFAULT_SETTINGS.notificationsEnabled,
       daysBefore: { ...DEFAULT_SETTINGS.daysBefore, ...(parsed.daysBefore ?? {}) },
-      zone: parsed.zone ?? DEFAULT_SETTINGS.zone,
+      // A zone saved before others were locked falls back to the home zone.
+      zone: parsed.zone && isZoneSelectable(parsed.zone) ? parsed.zone : DEFAULT_SETTINGS.zone,
     };
   } catch {
     return DEFAULT_SETTINGS;
