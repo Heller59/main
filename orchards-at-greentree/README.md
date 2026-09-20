@@ -87,9 +87,9 @@ windows that end before they start, and gaps in the weekly trash run. It exits
 non-zero on any error, so you can gate a release on it.
 
 ```
-Zones found: 1-2, 3-4
+Zones found: 3-4
 
-Orchards at Greentree 2027: 52 trash, 26 recycling, 8 bulk windows
+Orchards at Greentree 2027: 52 trash, 26 recycling, 4 bulk windows
 
 Schedule looks good. Safe to ship.
 ```

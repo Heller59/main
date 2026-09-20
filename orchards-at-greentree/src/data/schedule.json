@@ -263,22 +263,10 @@
   ],
   "bulk": [
     {
-      "zones": "1-2",
-      "curbsideBy": "2026-01-05",
-      "windowStart": "2026-01-05",
-      "windowEnd": "2026-01-09"
-    },
-    {
       "zones": "3-4",
       "curbsideBy": "2026-01-12",
       "windowStart": "2026-01-12",
       "windowEnd": "2026-01-16"
-    },
-    {
-      "zones": "1-2",
-      "curbsideBy": "2026-04-06",
-      "windowStart": "2026-04-07",
-      "windowEnd": "2026-04-10"
     },
     {
       "zones": "3-4",
@@ -287,22 +275,10 @@
       "windowEnd": "2026-04-17"
     },
     {
-      "zones": "1-2",
-      "curbsideBy": "2026-07-06",
-      "windowStart": "2026-07-06",
-      "windowEnd": "2026-07-10"
-    },
-    {
       "zones": "3-4",
       "curbsideBy": "2026-07-13",
       "windowStart": "2026-07-13",
       "windowEnd": "2026-07-17"
-    },
-    {
-      "zones": "1-2",
-      "curbsideBy": "2026-10-05",
-      "windowStart": "2026-10-05",
-      "windowEnd": "2026-10-09"
     },
     {
       "zones": "3-4",
