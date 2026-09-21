@@ -13,13 +13,17 @@
       "resizeMode": "contain",
       "backgroundColor": "#527F7A"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.orchardsatgreentree.hoa",
       "buildNumber": "1",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -48,8 +52,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "00000000-0000-0000-0000-000000000000"
+        "projectId": "f1073946-e18e-4d21-ad27-5b3d13c469c8"
       }
-    }
+    },
+    "owner": "toddmclain"
   }
 }

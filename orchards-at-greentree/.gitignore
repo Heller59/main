@@ -6,3 +6,8 @@ android/
 ios/
 *.log
 .DS_Store
+
+# EAS signing credentials - never commit
+credentials.json
+credentials/
+*.jks
