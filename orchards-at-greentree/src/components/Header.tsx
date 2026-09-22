@@ -1,8 +1,14 @@
 import React from 'react';
-import { Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { useSafeArea } from '../lib/useSafeArea';
-import { BellIcon, GearIcon, TreeMark } from '../icons';
+import { BellIcon, GearIcon } from '../icons';
 import { colors, radius, space, typography } from '../theme';
+
+// Aspect-locked crop of the orchardsatgreentree.com tree mark (trunk + crown only,
+// the sprawling right branch is cropped away — it reads as a smudge at header size).
+const TREE_MARK = require('../../assets/tree-mark.png');
+const TREE_MARK_WIDTH = 24;
+const TREE_MARK_HEIGHT = 30;
 
 interface Props {
   community: string;
@@ -24,7 +30,11 @@ export default function Header({
       <StatusBar barStyle="light-content" backgroundColor={colors.teal} />
       <View style={styles.row}>
         <View style={styles.mark}>
-          <TreeMark size={30} color={colors.white} />
+          <Image
+            source={TREE_MARK}
+            resizeMode="contain"
+            style={{ width: TREE_MARK_WIDTH, height: TREE_MARK_HEIGHT, tintColor: colors.white }}
+          />
         </View>
 
         <View style={styles.titleBlock}>

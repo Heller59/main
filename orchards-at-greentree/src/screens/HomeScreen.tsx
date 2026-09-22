@@ -15,13 +15,7 @@ import {
   upcoming,
   type CollectionEvent,
 } from '../lib/schedule';
-import {
-  configureAndroidChannel,
-  hasPermission,
-  requestPermission,
-  rescheduleAll,
-  sendTestNotification,
-} from '../lib/notifications';
+import { configureAndroidChannel, requestPermission, rescheduleAll } from '../lib/notifications';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from '../lib/settings';
 import SettingsScreen from './SettingsScreen';
 import { colors, space, typography } from '../theme';
@@ -32,7 +26,6 @@ export default function HomeScreen() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [ready, setReady] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [scheduledCount, setScheduledCount] = useState(0);
   const [permissionDenied, setPermissionDenied] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -70,15 +63,11 @@ export default function HomeScreen() {
         const granted = await requestPermission();
         if (!alive) return;
         setPermissionDenied(!granted);
-        if (!granted) {
-          setScheduledCount(0);
-          return;
-        }
+        if (!granted) return;
       } else {
         setPermissionDenied(false);
       }
-      const result = await rescheduleAll(events, settings);
-      if (alive) setScheduledCount(result.scheduled);
+      await rescheduleAll(events, settings);
     })();
     return () => {
       alive = false;
@@ -98,15 +87,6 @@ export default function HomeScreen() {
   }, []);
 
   const closeDay = useCallback(() => setSelectedDate(null), []);
-
-  const onSendTest = useCallback(async () => {
-    const granted = await hasPermission();
-    if (!granted) {
-      setPermissionDenied(true);
-      return;
-    }
-    await sendTestNotification();
-  }, []);
 
   return (
     <View style={styles.root}>
@@ -148,11 +128,9 @@ export default function HomeScreen() {
       <SettingsScreen
         visible={settingsOpen}
         settings={settings}
-        scheduledCount={scheduledCount}
         permissionDenied={permissionDenied}
         onClose={() => setSettingsOpen(false)}
         onChange={updateSettings}
-        onSendTest={onSendTest}
       />
     </View>
   );

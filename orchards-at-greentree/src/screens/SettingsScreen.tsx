@@ -11,22 +11,8 @@ import {
 } from 'react-native';
 import { CloseIcon, CouchIcon, RecycleIcon, TrashIcon } from '../icons';
 import { useSafeArea } from '../lib/useSafeArea';
-import {
-  ALL_KINDS,
-  KIND_LABEL,
-  scheduleMeta,
-  zoneLabel,
-  type EventKind,
-  type Zone,
-} from '../lib/schedule';
-import {
-  MAX_DAYS_BEFORE,
-  MIN_DAYS_BEFORE,
-  clampDays,
-  isZoneSelectable,
-  leadLabel,
-  type Settings,
-} from '../lib/settings';
+import { ALL_KINDS, KIND_LABEL, scheduleMeta, type EventKind } from '../lib/schedule';
+import { MAX_DAYS_BEFORE, MIN_DAYS_BEFORE, clampDays, leadLabel, type Settings } from '../lib/settings';
 import { colors, radius, shadow, space, typography } from '../theme';
 
 function Glyph({ kind }: { kind: EventKind }) {
@@ -80,29 +66,23 @@ function Stepper({
 interface Props {
   visible: boolean;
   settings: Settings;
-  scheduledCount: number;
   permissionDenied: boolean;
   onClose: () => void;
   onChange: (next: Settings) => void;
-  onSendTest: () => void;
 }
 
 export default function SettingsScreen({
   visible,
   settings,
-  scheduledCount,
   permissionDenied,
   onClose,
   onChange,
-  onSendTest,
 }: Props) {
   const { top, bottom } = useSafeArea();
   const on = settings.notificationsEnabled;
 
   const setDays = (kind: EventKind, days: number) =>
     onChange({ ...settings, daysBefore: { ...settings.daysBefore, [kind]: days } });
-
-  const setZone = (zone: Zone) => onChange({ ...settings, zone });
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -150,23 +130,6 @@ export default function SettingsScreen({
                 </Text>
               </Pressable>
             ) : null}
-
-            {on ? (
-              <View style={styles.statusRow}>
-                <Text style={styles.statusText}>
-                  {scheduledCount > 0
-                    ? `${scheduledCount} reminder${scheduledCount === 1 ? '' : 's'} scheduled`
-                    : 'No upcoming reminders to schedule'}
-                </Text>
-                <Pressable
-                  onPress={onSendTest}
-                  accessibilityRole="button"
-                  style={({ pressed }) => [styles.testBtn, pressed && styles.testBtnPressed]}
-                >
-                  <Text style={styles.testBtnText}>Send a test</Text>
-                </Pressable>
-              </View>
-            ) : null}
           </View>
 
           {/* Lead time per collection type */}
@@ -198,51 +161,12 @@ export default function SettingsScreen({
             Every reminder arrives at 12:00 noon on the day you choose.
           </Text>
 
-          {/* Bulk zone */}
-          <Text style={styles.sectionLabel}>My bulk collection zone</Text>
-          <View style={styles.card}>
-            <Text style={styles.cardNote}>
-              Evesham Township splits bulk pickup by zone. The Orchards falls in Zones 3 &amp; 4.
-            </Text>
-            <View style={styles.zoneRow}>
-              {scheduleMeta.zones.map((z) => {
-                const active = settings.zone === z;
-                const locked = !isZoneSelectable(z);
-                return (
-                  <Pressable
-                    key={z}
-                    onPress={() => setZone(z)}
-                    disabled={locked}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: active, disabled: locked }}
-                    style={({ pressed }) => [
-                      styles.zoneBtn,
-                      active && styles.zoneBtnActive,
-                      locked && styles.zoneBtnDisabled,
-                      pressed && !active && !locked && { backgroundColor: colors.mint },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.zoneText,
-                        active && styles.zoneTextActive,
-                        locked && styles.zoneTextDisabled,
-                      ]}
-                    >
-                      {zoneLabel(z)}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-
           {/* About */}
           <Text style={styles.sectionLabel}>About</Text>
           <View style={styles.card}>
-            <AboutRow label="Schedule year" value={String(scheduleMeta.year)} />
-            <AboutRow label="Regular trash day" value={scheduleMeta.regularTrashDay} divider />
+            <AboutRow label="Regular trash day" value={scheduleMeta.regularTrashDay} />
             <AboutRow label="Township" value={scheduleMeta.township} divider />
+            <AboutRow label="Bulk pickup zone" value="Zone 4" divider />
             <AboutRow
               label="Recycling hotline"
               value={scheduleMeta.recyclingHotline}
@@ -337,25 +261,6 @@ const styles = StyleSheet.create({
   },
   warningText: { ...typography.small, fontSize: 12, color: '#8A4B1F', lineHeight: 18 },
 
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: space(3),
-    paddingTop: space(3),
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.line,
-  },
-  statusText: { ...typography.small, color: colors.teal, fontWeight: '600', flex: 1 },
-  testBtn: {
-    paddingHorizontal: space(3),
-    paddingVertical: space(1.5),
-    borderRadius: 999,
-    backgroundColor: colors.mint,
-  },
-  testBtnPressed: { backgroundColor: colors.mintDeep },
-  testBtnText: { ...typography.tiny, color: colors.tealDark },
-
   leadRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -389,21 +294,6 @@ const styles = StyleSheet.create({
   stepBtnText: { fontSize: 18, fontWeight: '700', color: colors.tealDark, lineHeight: 22 },
   stepBtnTextOff: { color: colors.inkFaint },
   stepValue: { ...typography.title, color: colors.ink, minWidth: 22, textAlign: 'center' },
-
-  zoneRow: { flexDirection: 'row', gap: space(2), marginTop: space(3) },
-  zoneBtn: {
-    flex: 1,
-    paddingVertical: space(2.5),
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.line,
-    alignItems: 'center',
-  },
-  zoneBtnActive: { backgroundColor: colors.teal, borderColor: colors.teal },
-  zoneText: { ...typography.small, fontWeight: '600', color: colors.inkSoft },
-  zoneTextActive: { color: colors.white },
-  zoneBtnDisabled: { backgroundColor: '#F1F1F1', borderColor: '#E4E4E4' },
-  zoneTextDisabled: { color: '#B5B5B5' },
 
   aboutRow: {
     flexDirection: 'row',

@@ -19,6 +19,8 @@ import KindBadge from './KindBadge';
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const CARD_MARGIN = space(4);
 const GRID_PAD = space(2);
+const CELL_ASPECT = 1.18;
+const DOW_ROW_HEIGHT = 20;
 
 type MonthRef = { year: number; month: number };
 
@@ -124,7 +126,7 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
                   }
                   style={({ pressed }) => [
                     styles.cell,
-                    { width: cellWidth, height: cellWidth * 1.18 },
+                    { width: cellWidth, height: cellWidth * CELL_ASPECT },
                     pressed && hasEvents && styles.cellPressed,
                   ]}
                 >
@@ -163,6 +165,12 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
 
   const current = months[index] ?? months[0];
 
+  // A horizontal list is as tall as its tallest rendered page, so a 6-week
+  // neighbour would leave a blank row under a 5-week month. Pin the height
+  // to the month on screen instead.
+  const weeks = current ? buildCells(current.year, current.month).length / 7 : 6;
+  const listHeight = DOW_ROW_HEIGHT + weeks * cellWidth * CELL_ASPECT;
+
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -198,6 +206,7 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
 
       <FlatList
         ref={listRef}
+        style={{ height: listHeight, flexGrow: 0 }}
         data={months}
         keyExtractor={(m) => `${m.year}-${m.month}`}
         renderItem={renderMonth}
@@ -258,7 +267,7 @@ const styles = StyleSheet.create({
   },
   navBtnPressed: { backgroundColor: colors.mint },
   monthLabel: { ...typography.title, color: colors.ink },
-  dowRow: { flexDirection: 'row', paddingBottom: space(1) },
+  dowRow: { flexDirection: 'row', height: DOW_ROW_HEIGHT, paddingBottom: space(1) },
   dowText: {
     ...typography.tiny,
     color: colors.inkFaint,

@@ -15,7 +15,7 @@ export interface Settings {
  * can start putting items out, not before the crews arrive.
  */
 export const DEFAULT_SETTINGS: Settings = {
-  notificationsEnabled: false,
+  notificationsEnabled: true,
   daysBefore: { trash: 1, recycling: 1, bulk: 1 },
   zone: '3-4',
 };

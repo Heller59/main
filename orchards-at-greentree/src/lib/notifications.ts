@@ -32,11 +32,6 @@ export async function configureAndroidChannel(): Promise<void> {
   });
 }
 
-export async function hasPermission(): Promise<boolean> {
-  const { status } = await Notifications.getPermissionsAsync();
-  return status === 'granted';
-}
-
 export async function requestPermission(): Promise<boolean> {
   const existing = await Notifications.getPermissionsAsync();
   if (existing.status === 'granted') return true;
@@ -122,26 +117,4 @@ export async function rescheduleAll(
 
 export async function cancelAll(): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
-}
-
-export async function pendingCount(): Promise<number> {
-  const pending = await Notifications.getAllScheduledNotificationsAsync();
-  return pending.length;
-}
-
-/** Fires a test banner a few seconds out so you can confirm the plumbing. */
-export async function sendTestNotification(): Promise<void> {
-  await configureAndroidChannel();
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Reminders are on',
-      body: 'This is what a collection reminder looks like. Real ones arrive at noon.',
-      sound: true,
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 5,
-      channelId: CHANNEL_ID,
-    },
-  });
 }

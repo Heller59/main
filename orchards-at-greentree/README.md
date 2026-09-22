@@ -60,8 +60,10 @@ eas login
 eas build --platform ios --profile development
 ```
 
-Inside the app, **Settings → Send a test** fires a sample banner five seconds later,
-which is the quickest way to confirm permissions and the Android channel are wired up.
+Notifications are on by default and prompt for permission the first time the app
+opens. Toggling **Settings → Collection reminders** off and back on re-requests
+permission and reschedules the queue, which is the quickest way to confirm it's
+wired up.
 
 ---
 
@@ -158,8 +160,9 @@ A few things worth knowing:
   Monday of the designated week," which is not always the first collection day — in
   October 2026, Zones 3 & 4 are collected Tue 13th–Fri 16th, but items go out Monday
   the 12th. The bulk reminder counts back from `curbsideBy`, so it lands correctly.
-- **Both zone schedules are included.** Residents pick theirs in Settings. The
-  Orchards is in Zones 3 & 4, which is the default.
+- **Only the Orchards' zone is included.** The schedule data holds bulk windows for
+  Zones 3 & 4 only; Zones 1 & 2 were removed since no resident here needs them.
+  Settings shows the zone as a read-only About row rather than a picker.
 
 ---
 

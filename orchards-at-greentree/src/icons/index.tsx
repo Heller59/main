@@ -161,33 +161,6 @@ export function CloseIcon({ size = 20, color = colors.inkSoft }) {
   );
 }
 
-/** Small tree mark echoing the Orchards logo, used in the header. */
-export function TreeMark({ size = 30, color = colors.white }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 100 100">
-      <Path
-        d="M50 88 L50 52"
-        stroke={color}
-        strokeWidth={6}
-        strokeLinecap="round"
-      />
-      <Path
-        d="M50 62 L31 44 M50 56 L69 38 M50 72 L36 62"
-        stroke={color}
-        strokeWidth={4.5}
-        strokeLinecap="round"
-        fill="none"
-      />
-      <Circle cx={28} cy={40} r={9} fill={color} />
-      <Circle cx={46} cy={28} r={11} fill={color} />
-      <Circle cx={66} cy={34} r={10} fill={color} />
-      <Circle cx={72} cy={52} r={7.5} fill={color} />
-      <Circle cx={33} cy={58} r={7} fill={color} />
-      <Rect x={36} y={86} width={28} height={6} rx={3} fill={color} />
-    </Svg>
-  );
-}
-
 export const KindIcon: Record<string, React.ComponentType<IconProps>> = {
   trash: TrashIcon,
   recycling: RecycleIcon,
