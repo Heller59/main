@@ -51,8 +51,9 @@
       "minimum": 0,
       "maximum": 23
     },
-    "recyclingHotline": {
-      "type": "string"
+    "recyclingUrl": {
+      "type": "string",
+      "format": "uri"
     },
     "trash": {
       "$ref": "#/definitions/datedList"

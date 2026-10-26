@@ -165,17 +165,16 @@ export default function SettingsScreen({
           <Text style={styles.sectionLabel}>About</Text>
           <View style={styles.card}>
             <AboutRow label="Regular trash day" value={scheduleMeta.regularTrashDay} />
-            <AboutRow label="Township" value={scheduleMeta.township} divider />
             <AboutRow label="Bulk pickup zone" value="Zone 4" divider />
             <AboutRow
-              label="Recycling hotline"
-              value={scheduleMeta.recyclingHotline}
+              label="Recycling Web Site"
+              value="Burlington County Recycling"
               divider
-              onPress={() => Linking.openURL(`tel:${scheduleMeta.recyclingHotline}`)}
+              onPress={() => Linking.openURL(scheduleMeta.recyclingUrl)}
             />
             <AboutRow
-              label="HOA website"
-              value="orchardsatgreentree.com"
+              label="HOA Portal"
+              value="portal.targetpm.com"
               divider
               onPress={() => Linking.openURL(scheduleMeta.website)}
             />

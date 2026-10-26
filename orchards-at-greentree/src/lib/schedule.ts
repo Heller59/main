@@ -37,7 +37,7 @@ export const scheduleMeta = {
   source: raw.source,
   regularTrashDay: raw.regularTrashDay,
   setOutHour: raw.setOutHour,
-  recyclingHotline: raw.recyclingHotline,
+  recyclingUrl: raw.recyclingUrl,
   zones: availableZones,
 };
 

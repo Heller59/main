@@ -123,11 +123,11 @@ eas submit --platform all
   "year": 2026,
   "community": "Orchards at Greentree",
   "township": "Evesham Township, NJ",
-  "website": "https://www.orchardsatgreentree.com/",
+  "website": "https://portal.targetpm.com/public",
   "source": "Evesham Township 2026 Holiday Trash, Recycling & Bulk Collection Schedules",
   "regularTrashDay": "Thursday",
   "setOutHour": 18,
-  "recyclingHotline": "609-267-6889",
+  "recyclingUrl": "https://www.burlingtoncountynj.gov/345/Recycling",
 
   // Every pickup date, already adjusted for holiday shifts.
   // Add a "note" on any date that moved, and it shows in the app.
