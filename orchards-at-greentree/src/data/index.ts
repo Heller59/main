@@ -29,7 +29,7 @@ export interface ScheduleFile {
   source: string;
   regularTrashDay: string;
   setOutHour: number;
-  recyclingHotline: string;
+  recyclingUrl: string;
   trash: DatedEntry[];
   recycling: DatedEntry[];
   bulk: BulkWindow[];
