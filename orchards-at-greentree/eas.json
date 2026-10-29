@@ -7,6 +7,15 @@
     "apk": {
       "android": { "buildType": "apk" },
       "autoIncrement": true
+    },
+    "production": {
+      "autoIncrement": true,
+      "ios": {
+        "distribution": "store"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   }
 }
