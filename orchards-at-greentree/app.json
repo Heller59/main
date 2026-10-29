@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Orchards at Greentree",
+    "name": "The Orchards Trash & Recycling",
     "slug": "orchards-hoa",
     "version": "2026.1.0",
     "orientation": "portrait",
@@ -18,7 +18,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.orchardsatgreentree.hoa",
+      "bundleIdentifier": "com.theorchardstrashrecycling",
       "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": [
@@ -27,7 +27,7 @@
       }
     },
     "android": {
-      "package": "com.orchardsatgreentree.hoa",
+      "package": "com.theorchardstrashrecycling",
       "versionCode": 1,
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
