@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## README maintenance
 
-After any code change that affects user-facing behaviour, new capabilities, configuration, architecture, or the embed/deployment workflow, update `README.md` to reflect the change. This includes (but is not limited to): new pages or API endpoints, changes to `appsettings.json` keys, changes to the widget embed contract, new rate-limit or kill-switch behaviour, and changes to the processing pipeline.
+The root `README.md` is just an index linking to each project's own README (`CHATBOT.md` for the ChatBot platform, `orchards-at-greentree/README.md`, `DocBot/README.md`). After any ChatBot code change that affects user-facing behaviour, new capabilities, configuration, architecture, or the embed/deployment workflow, update `CHATBOT.md` to reflect the change. This includes (but is not limited to): new pages or API endpoints, changes to `appsettings.json` keys, changes to the widget embed contract, new rate-limit or kill-switch behaviour, and changes to the processing pipeline.
 
 ## Commands
 
