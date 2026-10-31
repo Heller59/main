@@ -3,31 +3,7 @@
  * `new Date("2026-10-12")` parses as UTC midnight, which lands on the previous
  * day for anyone west of Greenwich — so we always split the string by hand.
  */
-
-const WEEKDAYS = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-];
-
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
+import { translations, type Locale } from '../i18n/translations';
 
 export function parseISO(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number);
@@ -56,21 +32,30 @@ export function todayISO(): string {
   return toISO(today());
 }
 
-/** "Thursday, September 24" */
-export function fmtLong(iso: string): string {
+/** "Thursday, September 24" / "jueves, 24 de septiembre" */
+export function fmtLong(iso: string, locale: Locale = 'en'): string {
   const d = parseISO(iso);
-  return `${WEEKDAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
+  const { weekdays, months } = translations[locale];
+  if (locale === 'es') {
+    return `${weekdays[d.getDay()]}, ${d.getDate()} de ${months[d.getMonth()]}`;
+  }
+  return `${weekdays[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
 }
 
-/** "Thu, Sep 24" */
-export function fmtShort(iso: string): string {
+/** "Thu, Sep 24" / "jue, 24 sept" */
+export function fmtShort(iso: string, locale: Locale = 'en'): string {
   const d = parseISO(iso);
-  return `${WEEKDAYS[d.getDay()].slice(0, 3)}, ${MONTHS[d.getMonth()].slice(0, 3)} ${d.getDate()}`;
+  const { weekdays, months } = translations[locale];
+  if (locale === 'es') {
+    return `${weekdays[d.getDay()].slice(0, 3)}, ${d.getDate()} ${months[d.getMonth()].slice(0, 4)}`;
+  }
+  return `${weekdays[d.getDay()].slice(0, 3)}, ${months[d.getMonth()].slice(0, 3)} ${d.getDate()}`;
 }
 
-/** "September 2026" */
-export function fmtMonthYear(year: number, month: number): string {
-  return `${MONTHS[month]} ${year}`;
+/** "September 2026" / "septiembre de 2026" */
+export function fmtMonthYear(year: number, month: number, locale: Locale = 'en'): string {
+  const { months } = translations[locale];
+  return locale === 'es' ? `${months[month]} de ${year}` : `${months[month]} ${year}`;
 }
 
 /** Whole days from today to `iso`. Negative means it has already passed. */
@@ -80,12 +65,11 @@ export function daysUntil(iso: string): number {
 }
 
 /** "Today" / "Tomorrow" / "in 5 days" */
-export function relativeLabel(iso: string): string {
+export function relativeLabel(iso: string, locale: Locale = 'en'): string {
   const n = daysUntil(iso);
-  if (n === 0) return 'Today';
-  if (n === 1) return 'Tomorrow';
-  if (n < 0) return `${Math.abs(n)} days ago`;
-  return `in ${n} days`;
+  const t = translations[locale].event;
+  if (n === 0) return t.today;
+  if (n === 1) return t.tomorrow;
+  if (n < 0) return t.daysAgo(Math.abs(n));
+  return t.inDays(n);
 }
-
-export { MONTHS, WEEKDAYS };

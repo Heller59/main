@@ -1,4 +1,5 @@
 import { availableZones, schedule as raw } from '../data';
+import { translations, type Locale } from '../i18n/translations';
 import { addDays, fmtLong, fmtShort, parseISO, toISO, todayISO } from './dates';
 
 export type EventKind = 'trash' | 'recycling' | 'bulk';
@@ -19,11 +20,9 @@ export interface CollectionEvent {
   detail?: string;
 }
 
-export const KIND_LABEL: Record<EventKind, string> = {
-  trash: 'Trash Collection',
-  recycling: 'Recycling Collection',
-  bulk: 'Bulk Collection',
-};
+export function kindLabel(kind: EventKind, locale: Locale): string {
+  return translations[locale].kind[kind];
+}
 
 export const ALL_KINDS: EventKind[] = ['trash', 'recycling', 'bulk'];
 
@@ -41,8 +40,9 @@ export const scheduleMeta = {
   zones: availableZones,
 };
 
-export function zoneLabel(zone: Zone): string {
-  return zone.includes('-') ? `Zones ${zone.replace('-', ' & ')}` : `Zone ${zone}`;
+export function zoneLabel(zone: Zone, locale: Locale): string {
+  const t = translations[locale].schedule;
+  return zone.includes('-') ? t.zonePair(...(zone.split('-') as [string, string])) : t.zoneSingle(zone);
 }
 
 /**
@@ -50,8 +50,11 @@ export function zoneLabel(zone: Zone): string {
  * Bulk works differently: the township wants items curbside by 6 AM on the
  * Monday of the collection week, and crews work through that week.
  */
-export function buildEvents(zone: Zone): CollectionEvent[] {
+export function buildEvents(zone: Zone, locale: Locale): CollectionEvent[] {
   const events: CollectionEvent[] = [];
+  const t = translations[locale].schedule;
+  const noteFor = (note?: string, noteEs?: string) =>
+    locale === 'es' ? noteEs ?? note : note;
 
   for (const e of raw.trash) {
     const evening = toISO(addDays(parseISO(e.date), -1));
@@ -60,9 +63,9 @@ export function buildEvents(zone: Zone): CollectionEvent[] {
       kind: 'trash',
       markerDate: e.date,
       anchorDate: e.date,
-      title: KIND_LABEL.trash,
-      note: `Put out bins after 6 PM on ${fmtLong(evening)}.`,
-      detail: e.note,
+      title: kindLabel('trash', locale),
+      note: t.putOutBins(fmtLong(evening, locale)),
+      detail: noteFor(e.note, e.noteEs),
     });
   }
 
@@ -73,9 +76,9 @@ export function buildEvents(zone: Zone): CollectionEvent[] {
       kind: 'recycling',
       markerDate: e.date,
       anchorDate: e.date,
-      title: KIND_LABEL.recycling,
-      note: `Put out bins after 6 PM on ${fmtLong(evening)}.`,
-      detail: e.note,
+      title: kindLabel('recycling', locale),
+      note: t.putOutBins(fmtLong(evening, locale)),
+      detail: noteFor(e.note, e.noteEs),
     });
   }
 
@@ -86,11 +89,9 @@ export function buildEvents(zone: Zone): CollectionEvent[] {
       kind: 'bulk',
       markerDate: b.curbsideBy,
       anchorDate: b.curbsideBy,
-      title: KIND_LABEL.bulk,
-      note: `Put out bulk items starting ${fmtLong(b.curbsideBy)}.`,
-      detail: `Curbside by 6 AM. Crews collect ${fmtShort(b.windowStart)} through ${fmtShort(
-        b.windowEnd,
-      )}.`,
+      title: kindLabel('bulk', locale),
+      note: t.putOutBulk(fmtLong(b.curbsideBy, locale)),
+      detail: t.bulkDetail(fmtShort(b.windowStart, locale), fmtShort(b.windowEnd, locale)),
     });
   }
 

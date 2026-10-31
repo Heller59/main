@@ -116,6 +116,10 @@
           "note": {
             "type": "string",
             "description": "Shown in the app. Use for holiday shifts, e.g. \"Moved to Friday for Labor Day\"."
+          },
+          "noteEs": {
+            "type": "string",
+            "description": "Spanish translation of \"note\", shown when the app is in Spanish."
           }
         }
       }

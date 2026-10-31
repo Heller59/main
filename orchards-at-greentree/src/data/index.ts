@@ -12,6 +12,8 @@ import scheduleJson from './schedule.json';
 export interface DatedEntry {
   date: string;
   note?: string;
+  /** Spanish translation of `note`, shown when the app is in Spanish. */
+  noteEs?: string;
 }
 
 export interface BulkWindow {

@@ -54,9 +54,3 @@ export async function saveSettings(s: Settings): Promise<void> {
 export function clampDays(n: number): number {
   return Math.max(MIN_DAYS_BEFORE, Math.min(MAX_DAYS_BEFORE, n));
 }
-
-export function leadLabel(days: number): string {
-  if (days === 0) return 'Same day, at noon';
-  if (days === 1) return '1 day before, at noon';
-  return `${days} days before, at noon`;
-}
