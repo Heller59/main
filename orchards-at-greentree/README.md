@@ -114,6 +114,12 @@ eas build --platform all --profile production
 eas submit --platform all
 ```
 
+Android release builds are minified and shrunk with R8 (`expo-build-properties` in
+`app.json`, required by Google Play starting February 2027). If a release build
+crashes but a dev build doesn't, that's the first thing to suspect — check
+`android/app/build/outputs/mapping/release/mapping.txt` (bundled automatically into
+the `.aab`, no manual Play Console upload needed) before assuming it's a logic bug.
+
 ---
 
 ## The schedule file
@@ -123,22 +129,32 @@ eas submit --platform all
   "year": 2026,
   "community": "Orchards at Greentree",
   "township": "Evesham Township, NJ",
-  "website": "https://portal.targetpm.com/public",
+  "website": "https://portal.targetpm.com/",
   "source": "Evesham Township 2026 Holiday Trash, Recycling & Bulk Collection Schedules",
   "regularTrashDay": "Thursday",
   "setOutHour": 18,
   "recyclingUrl": "https://www.burlingtoncountynj.gov/345/Recycling",
 
   // Every pickup date, already adjusted for holiday shifts.
-  // Add a "note" on any date that moved, and it shows in the app.
+  // Add a "note" on any date that moved, and it shows in the app. Add a
+  // "noteEs" alongside it for the Spanish translation — "npm run check-schedule"
+  // warns (but doesn't fail) if a note is missing its Spanish counterpart.
   "trash": [
     { "date": "2026-01-08" },
-    { "date": "2026-01-23", "note": "Moved to Friday for Martin Luther King Jr. Day" }
+    {
+      "date": "2026-01-23",
+      "note": "Moved to Friday for Martin Luther King Jr. Day",
+      "noteEs": "Trasladado al viernes por el Día de Martin Luther King Jr."
+    }
   ],
 
   "recycling": [
     { "date": "2026-01-09" },
-    { "date": "2026-05-30", "note": "Saturday pickup (Memorial Day week)" }
+    {
+      "date": "2026-05-30",
+      "note": "Saturday pickup (Memorial Day week)",
+      "noteEs": "Recolección el sábado (semana del Día de los Caídos)"
+    }
   ],
 
   // curbsideBy is the Monday residents may start putting items out (6 AM).
@@ -166,6 +182,25 @@ A few things worth knowing:
 
 ---
 
+## Language
+
+The app ships in English and Spanish. It follows the phone's system language by
+default; **Settings → Language** has a manual System / English / Español override,
+persisted independently of the rest of Settings.
+
+Everything is translated: calendar, reminders, notification text, and the holiday
+notes in `schedule.json` (via the `note` / `noteEs` pair described above). There's no
+translation service involved — `src/i18n/translations.ts` is a plain object with
+parallel `en` and `es` copies of every string, typed against a shared `Strings`
+interface so the two can't drift out of shape. `src/i18n/LocaleContext.tsx` reads the
+device locale with `expo-localization`, resolves the active locale, and exposes it
+through `useLocale()` (`{ locale, t, override, setOverride }`) to any component.
+
+To add a new string: add the key to the `Strings` interface, then fill it in on both
+the `en` and `es` objects — TypeScript won't compile if either is missing it.
+
+---
+
 ## How the app behaves
 
 **Calendar** — opens on the current month. Swipe or use the arrows to move through
@@ -185,6 +220,9 @@ default puts the reminder on Sunday.
 iOS caps an app at 64 pending local notifications, so the app schedules the soonest
 60 and rebuilds the queue every time it opens or a setting changes.
 
+**Settings → About** — regular trash day, bulk pickup zone, and the resident portal
+are tappable, opening the township's and the portal's pages in the browser.
+
 ---
 
 ## Project layout
@@ -199,9 +237,12 @@ src/
   data/
     schedule.json            >>> the file you replace each year <<<
     index.ts                 loads and validates it at startup
+  i18n/
+    translations.ts          en/es strings, typed against one shared interface
+    LocaleContext.tsx        device-locale detection + the Settings override
   lib/
-    dates.ts                 timezone-safe date handling
-    schedule.ts              turns JSON into calendar events
+    dates.ts                 timezone-safe, locale-aware date handling
+    schedule.ts              turns JSON into calendar events (locale-aware)
     notifications.ts         permissions and local scheduling
     settings.ts              persisted user preferences
     useSafeArea.ts
@@ -213,7 +254,7 @@ src/
     Header.tsx
   screens/
     HomeScreen.tsx           composes everything, drives scheduling
-    SettingsScreen.tsx
+    SettingsScreen.tsx       also has the Language picker
   theme.ts                   colors sampled from orchardsatgreentree.com
 ```
 
