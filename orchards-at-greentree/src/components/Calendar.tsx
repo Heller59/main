@@ -11,12 +11,12 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { ChevronIcon } from '../icons';
+import { useLocale } from '../i18n/LocaleContext';
 import { fmtMonthYear, toISO, todayISO } from '../lib/dates';
 import type { CollectionEvent, EventKind } from '../lib/schedule';
 import { colors, radius, shadow, space, typography } from '../theme';
 import KindBadge from './KindBadge';
 
-const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const CARD_MARGIN = space(4);
 const GRID_PAD = space(2);
 const CELL_ASPECT = 1.18;
@@ -56,6 +56,7 @@ interface Props {
 
 export default function Calendar({ months, eventsByDate, initialIndex, onSelectDate }: Props) {
   const { width } = useWindowDimensions();
+  const { locale, t } = useLocale();
   const pageWidth = width - CARD_MARGIN * 2;
   const cellWidth = (pageWidth - GRID_PAD * 2) / 7;
   // Badges share the cell width: roomy for one or two, tighter when three collide.
@@ -99,7 +100,7 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
       return (
         <View style={{ width: pageWidth, paddingHorizontal: GRID_PAD }}>
           <View style={styles.dowRow}>
-            {DOW.map((d, i) => (
+            {t.calendar.dow.map((d, i) => (
               <View key={i} style={{ width: cellWidth }}>
                 <Text style={styles.dowText}>{d}</Text>
               </View>
@@ -160,7 +161,7 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
         </View>
       );
     },
-    [cellWidth, eventsByDate, onSelectDate, pageWidth, today],
+    [cellWidth, eventsByDate, onSelectDate, pageWidth, today, t],
   );
 
   const current = months[index] ?? months[0];
@@ -179,14 +180,14 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
           disabled={index === 0}
           hitSlop={10}
           accessibilityRole="button"
-          accessibilityLabel="Previous month"
+          accessibilityLabel={t.calendar.prevMonth}
           style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
         >
           <ChevronIcon direction="left" color={index === 0 ? colors.inkFaint : colors.teal} />
         </Pressable>
 
         <Text style={styles.monthLabel}>
-          {current ? fmtMonthYear(current.year, current.month) : ''}
+          {current ? fmtMonthYear(current.year, current.month, locale) : ''}
         </Text>
 
         <Pressable
@@ -194,7 +195,7 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
           disabled={index >= months.length - 1}
           hitSlop={10}
           accessibilityRole="button"
-          accessibilityLabel="Next month"
+          accessibilityLabel={t.calendar.nextMonth}
           style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
         >
           <ChevronIcon
@@ -223,12 +224,18 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
       />
 
       <View style={styles.legend}>
-        <LegendItem icon={<KindBadge kind="trash" size={24} glyphRatio={0.68} />} label="Trash" />
+        <LegendItem
+          icon={<KindBadge kind="trash" size={24} glyphRatio={0.68} />}
+          label={t.calendar.legendTrash}
+        />
         <LegendItem
           icon={<KindBadge kind="recycling" size={24} glyphRatio={0.68} />}
-          label="Recycling"
+          label={t.calendar.legendRecycling}
         />
-        <LegendItem icon={<KindBadge kind="bulk" size={24} glyphRatio={0.68} />} label="Bulk" />
+        <LegendItem
+          icon={<KindBadge kind="bulk" size={24} glyphRatio={0.68} />}
+          label={t.calendar.legendBulk}
+        />
       </View>
     </View>
   );

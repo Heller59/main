@@ -2,7 +2,7 @@
   "year": 2026,
   "community": "Orchards at Greentree",
   "township": "Evesham Township, NJ",
-  "website": "https://portal.targetpm.com/public",
+  "website": "https://portal.targetpm.com/",
   "source": "Evesham Township 2026 Holiday Trash, Recycling & Bulk Collection Schedules",
   "regularTrashDay": "Thursday",
   "setOutHour": 18,
@@ -10,7 +10,8 @@
   "trash": [
     {
       "date": "2026-01-02",
-      "note": "Moved to Friday for New Year's Day"
+      "note": "Moved to Friday for New Year's Day",
+      "noteEs": "Trasladado al viernes por el Año Nuevo"
     },
     {
       "date": "2026-01-08"
@@ -20,7 +21,8 @@
     },
     {
       "date": "2026-01-23",
-      "note": "Moved to Friday for Martin Luther King Jr. Day"
+      "note": "Moved to Friday for Martin Luther King Jr. Day",
+      "noteEs": "Trasladado al viernes por el Día de Martin Luther King Jr."
     },
     {
       "date": "2026-01-29"
@@ -33,7 +35,8 @@
     },
     {
       "date": "2026-02-20",
-      "note": "Moved to Friday for Presidents' Day"
+      "note": "Moved to Friday for Presidents' Day",
+      "noteEs": "Trasladado al viernes por el Día de los Presidentes"
     },
     {
       "date": "2026-02-26"
@@ -55,7 +58,8 @@
     },
     {
       "date": "2026-04-10",
-      "note": "Moved to Friday for Easter Monday"
+      "note": "Moved to Friday for Easter Monday",
+      "noteEs": "Trasladado al viernes por el Lunes de Pascua"
     },
     {
       "date": "2026-04-16"
@@ -77,7 +81,8 @@
     },
     {
       "date": "2026-05-29",
-      "note": "Moved to Friday for Memorial Day"
+      "note": "Moved to Friday for Memorial Day",
+      "noteEs": "Trasladado al viernes por el Día de los Caídos"
     },
     {
       "date": "2026-06-04"
@@ -123,7 +128,8 @@
     },
     {
       "date": "2026-09-11",
-      "note": "Moved to Friday for Labor Day"
+      "note": "Moved to Friday for Labor Day",
+      "noteEs": "Trasladado al viernes por el Día del Trabajo"
     },
     {
       "date": "2026-09-17"
@@ -139,7 +145,8 @@
     },
     {
       "date": "2026-10-16",
-      "note": "Moved to Friday for Columbus Day"
+      "note": "Moved to Friday for Columbus Day",
+      "noteEs": "Trasladado al viernes por el Día de la Raza"
     },
     {
       "date": "2026-10-22"
@@ -152,14 +159,16 @@
     },
     {
       "date": "2026-11-13",
-      "note": "Moved to Friday for Veterans Day"
+      "note": "Moved to Friday for Veterans Day",
+      "noteEs": "Trasladado al viernes por el Día de los Veteranos"
     },
     {
       "date": "2026-11-19"
     },
     {
       "date": "2026-11-28",
-      "note": "Moved to Saturday for Thanksgiving"
+      "note": "Moved to Saturday for Thanksgiving",
+      "noteEs": "Trasladado al sábado por el Día de Acción de Gracias"
     },
     {
       "date": "2026-12-03"
@@ -198,7 +207,8 @@
     },
     {
       "date": "2026-04-03",
-      "note": "Collected on Good Friday as scheduled"
+      "note": "Collected on Good Friday as scheduled",
+      "noteEs": "Se recolecta el Viernes Santo según lo programado"
     },
     {
       "date": "2026-04-17"
@@ -211,7 +221,8 @@
     },
     {
       "date": "2026-05-30",
-      "note": "Saturday pickup (Memorial Day week)"
+      "note": "Saturday pickup (Memorial Day week)",
+      "noteEs": "Recolección el sábado (semana del Día de los Caídos)"
     },
     {
       "date": "2026-06-12"
@@ -251,14 +262,16 @@
     },
     {
       "date": "2026-11-28",
-      "note": "Saturday pickup (Thanksgiving week)"
+      "note": "Saturday pickup (Thanksgiving week)",
+      "noteEs": "Recolección el sábado (semana de Acción de Gracias)"
     },
     {
       "date": "2026-12-11"
     },
     {
       "date": "2026-12-26",
-      "note": "Saturday pickup (Christmas week)"
+      "note": "Saturday pickup (Christmas week)",
+      "noteEs": "Recolección el sábado (semana de Navidad)"
     }
   ],
   "bulk": [

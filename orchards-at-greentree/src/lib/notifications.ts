@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { translations, type Locale } from '../i18n/translations';
 import { addDays, fmtShort, parseISO } from './dates';
 import type { CollectionEvent } from './schedule';
 import { REMINDER_HOUR, type Settings } from './settings';
@@ -42,11 +43,11 @@ export async function requestPermission(): Promise<boolean> {
   return asked.status === 'granted';
 }
 
-function bodyFor(event: CollectionEvent): string {
+function bodyFor(event: CollectionEvent, locale: Locale): string {
   if (event.kind === 'bulk') {
     return `${event.note} ${event.detail ?? ''}`.trim();
   }
-  return `Collection is ${fmtShort(event.markerDate)}. ${event.note}`;
+  return `${translations[locale].notifications.collectionIs(fmtShort(event.markerDate, locale))} ${event.note}`;
 }
 
 /** The exact moment a reminder should fire: N days before, at noon local. */
@@ -70,6 +71,7 @@ export interface ScheduleResult {
 export async function rescheduleAll(
   events: CollectionEvent[],
   settings: Settings,
+  locale: Locale,
 ): Promise<ScheduleResult> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
@@ -92,7 +94,7 @@ export async function rescheduleAll(
       await Notifications.scheduleNotificationAsync({
         content: {
           title: event.title,
-          body: bodyFor(event),
+          body: bodyFor(event, locale),
           sound: true,
           data: { kind: event.kind, date: event.markerDate },
         },

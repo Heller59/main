@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { LocaleProvider } from './src/i18n/LocaleContext';
 import HomeScreen from './src/screens/HomeScreen';
 import { colors, space, typography } from './src/theme';
 
@@ -36,10 +37,12 @@ class ErrorBoundary extends React.Component<
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
-      <ErrorBoundary>
-        <HomeScreen />
-      </ErrorBoundary>
+      <LocaleProvider>
+        <StatusBar style="light" />
+        <ErrorBoundary>
+          <HomeScreen />
+        </ErrorBoundary>
+      </LocaleProvider>
     </SafeAreaProvider>
   );
 }

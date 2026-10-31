@@ -56,6 +56,9 @@ function checkList(data, key) {
     }
     if (seen.has(entry.date)) err(`${key}: ${entry.date} appears more than once`);
     seen.add(entry.date);
+    if (entry.note && !entry.noteEs) {
+      warn(`${key}[${i}] ${entry.date} has "note" but no "noteEs" (Spanish translation)`);
+    }
   });
 
   const sorted = list.map((e) => e.date).slice().sort();

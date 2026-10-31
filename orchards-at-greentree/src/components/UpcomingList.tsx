@@ -1,14 +1,16 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { MONTHS, fmtLong, fmtShort, parseISO, relativeLabel } from '../lib/dates';
+import { useLocale } from '../i18n/LocaleContext';
+import { fmtLong, fmtShort, parseISO, relativeLabel } from '../lib/dates';
 import type { CollectionEvent } from '../lib/schedule';
 import { colors, radius, shadow, space, typography } from '../theme';
 import Badge from './KindBadge';
 
 /** The prominent "what's next" card, one per collection typography. */
 function NextCard({ event }: { event: CollectionEvent }) {
-  const soon = relativeLabel(event.markerDate);
-  const isImminent = soon === 'Today' || soon === 'Tomorrow';
+  const { locale, t } = useLocale();
+  const soon = relativeLabel(event.markerDate, locale);
+  const isImminent = soon === t.event.today || soon === t.event.tomorrow;
 
   return (
     <View style={styles.nextCard}>
@@ -20,7 +22,7 @@ function NextCard({ event }: { event: CollectionEvent }) {
             <Text style={[styles.chipText, isImminent && styles.chipTextHot]}>{soon}</Text>
           </View>
         </View>
-        <Text style={styles.nextDate}>{fmtLong(event.markerDate)}</Text>
+        <Text style={styles.nextDate}>{fmtLong(event.markerDate, locale)}</Text>
         <Text style={styles.nextNote}>{event.note}</Text>
         {event.detail ? <Text style={styles.nextDetail}>{event.detail}</Text> : null}
       </View>
@@ -30,6 +32,7 @@ function NextCard({ event }: { event: CollectionEvent }) {
 
 /** One compact line in the full remaining-dates list. */
 function ScheduleRow({ event }: { event: CollectionEvent }) {
+  const { locale } = useLocale();
   return (
     <View style={styles.row}>
       <Badge kind={event.kind} size={32} />
@@ -40,7 +43,7 @@ function ScheduleRow({ event }: { event: CollectionEvent }) {
           {event.detail ? ` ${event.detail}` : ''}
         </Text>
       </View>
-      <Text style={styles.rowDate}>{fmtShort(event.markerDate)}</Text>
+      <Text style={styles.rowDate}>{fmtShort(event.markerDate, locale)}</Text>
     </View>
   );
 }
@@ -51,6 +54,7 @@ interface Props {
 }
 
 export default function UpcomingList({ next, remaining }: Props) {
+  const { t } = useLocale();
   // Group the long tail by month so it stays scannable.
   const groups: { key: string; label: string; items: CollectionEvent[] }[] = [];
   for (const e of remaining) {
@@ -58,26 +62,24 @@ export default function UpcomingList({ next, remaining }: Props) {
     const key = `${d.getFullYear()}-${d.getMonth()}`;
     const last = groups[groups.length - 1];
     if (last && last.key === key) last.items.push(e);
-    else groups.push({ key, label: `${MONTHS[d.getMonth()]} ${d.getFullYear()}`, items: [e] });
+    else groups.push({ key, label: `${t.months[d.getMonth()]} ${d.getFullYear()}`, items: [e] });
   }
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.sectionHeading}>Coming up next</Text>
+      <Text style={styles.sectionHeading}>{t.upcoming.comingUpNext}</Text>
       {next.length > 0 ? (
         next.map((e) => <NextCard key={`next-${e.id}`} event={e} />)
       ) : (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>
-            No collections left this year. Load next year&rsquo;s schedule to see more.
-          </Text>
+          <Text style={styles.emptyText}>{t.upcoming.emptyState}</Text>
         </View>
       )}
 
       {groups.length > 0 ? (
         <>
           <Text style={[styles.sectionHeading, { marginTop: space(7) }]}>
-            Rest of the schedule
+            {t.upcoming.restOfSchedule}
           </Text>
           {groups.map((g) => (
             <View key={g.key} style={styles.group}>

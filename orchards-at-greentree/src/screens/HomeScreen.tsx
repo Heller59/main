@@ -4,6 +4,7 @@ import Calendar from '../components/Calendar';
 import EventModal from '../components/EventModal';
 import Header from '../components/Header';
 import UpcomingList from '../components/UpcomingList';
+import { useLocale } from '../i18n/LocaleContext';
 import { useSafeArea } from '../lib/useSafeArea';
 import {
   buildEvents,
@@ -22,6 +23,7 @@ import { colors, space, typography } from '../theme';
 
 export default function HomeScreen() {
   const { bottom } = useSafeArea();
+  const { locale, t } = useLocale();
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [ready, setReady] = useState(false);
@@ -32,7 +34,7 @@ export default function HomeScreen() {
   const [selectedEvents, setSelectedEvents] = useState<CollectionEvent[]>([]);
 
   // Everything downstream is derived from the JSON plus the chosen zone.
-  const events = useMemo(() => buildEvents(settings.zone), [settings.zone]);
+  const events = useMemo(() => buildEvents(settings.zone, locale), [settings.zone, locale]);
   const eventsByDate = useMemo(() => indexByDate(events), [events]);
   const months = useMemo(() => scheduleMonths(events), [events]);
   const startIndex = useMemo(() => initialMonthIndex(months), [months]);
@@ -67,12 +69,12 @@ export default function HomeScreen() {
       } else {
         setPermissionDenied(false);
       }
-      await rescheduleAll(events, settings);
+      await rescheduleAll(events, settings, locale);
     })();
     return () => {
       alive = false;
     };
-  }, [ready, settings, events]);
+  }, [ready, settings, events, locale]);
 
   const updateSettings = useCallback((next: Settings) => {
     setSettings(next);
@@ -92,7 +94,7 @@ export default function HomeScreen() {
     <View style={styles.root}>
       <Header
         community={scheduleMeta.community}
-        subtitle={`${scheduleMeta.township} \u00b7 ${scheduleMeta.year} schedule`}
+        subtitle={t.home.headerSubtitle(scheduleMeta.township, scheduleMeta.year)}
         notificationsOn={settings.notificationsEnabled && !permissionDenied}
         onOpenSettings={() => setSettingsOpen(true)}
       />
@@ -112,10 +114,7 @@ export default function HomeScreen() {
 
         <UpcomingList next={next} remaining={ahead} />
 
-        <Text style={styles.credit}>
-          Schedule data: {scheduleMeta.source}.{'\n'}
-          Tap a highlighted date for details.
-        </Text>
+        <Text style={styles.credit}>{t.home.credit(scheduleMeta.source)}</Text>
       </ScrollView>
 
       <EventModal

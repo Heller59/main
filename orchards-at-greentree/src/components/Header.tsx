@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { useLocale } from '../i18n/LocaleContext';
 import { useSafeArea } from '../lib/useSafeArea';
 import { BellIcon, GearIcon } from '../icons';
 import { colors, radius, space, typography } from '../theme';
@@ -24,6 +25,7 @@ export default function Header({
   onOpenSettings,
 }: Props) {
   const { top } = useSafeArea();
+  const { t } = useLocale();
 
   return (
     <View style={[styles.band, { paddingTop: top + space(3) }]}>
@@ -50,9 +52,7 @@ export default function Header({
           onPress={onOpenSettings}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel={
-            notificationsOn ? 'Reminders are on. Open settings' : 'Reminders are off. Open settings'
-          }
+          accessibilityLabel={notificationsOn ? t.home.remindersOnA11y : t.home.remindersOffA11y}
           style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
         >
           <BellIcon size={21} active={notificationsOn} />
@@ -62,7 +62,7 @@ export default function Header({
           onPress={onOpenSettings}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Settings"
+          accessibilityLabel={t.home.settingsA11y}
           style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
         >
           <GearIcon size={21} />

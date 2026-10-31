@@ -10,9 +10,12 @@ import {
   View,
 } from 'react-native';
 import { CloseIcon, CouchIcon, RecycleIcon, TrashIcon } from '../icons';
+import { useLocale } from '../i18n/LocaleContext';
+import type { LocaleOverride } from '../i18n/LocaleContext';
+import type { Strings } from '../i18n/translations';
 import { useSafeArea } from '../lib/useSafeArea';
-import { ALL_KINDS, KIND_LABEL, scheduleMeta, type EventKind } from '../lib/schedule';
-import { MAX_DAYS_BEFORE, MIN_DAYS_BEFORE, clampDays, leadLabel, type Settings } from '../lib/settings';
+import { ALL_KINDS, kindLabel, scheduleMeta, zoneLabel, type EventKind } from '../lib/schedule';
+import { MAX_DAYS_BEFORE, MIN_DAYS_BEFORE, clampDays, type Settings } from '../lib/settings';
 import { colors, radius, shadow, space, typography } from '../theme';
 
 function Glyph({ kind }: { kind: EventKind }) {
@@ -22,18 +25,26 @@ function Glyph({ kind }: { kind: EventKind }) {
 }
 
 /** Bulk counts back from the Monday you may start setting items out. */
-function anchorHint(kind: EventKind): string {
-  return kind === 'bulk' ? 'Before the Monday you can start putting items out' : 'Before pickup day';
+function anchorHint(kind: EventKind, t: Strings): string {
+  return kind === 'bulk' ? t.settings.anchorHintBulk : t.settings.anchorHintDefault;
+}
+
+function leadLabel(days: number, t: Strings): string {
+  if (days === 0) return t.settings.leadSameDay;
+  if (days === 1) return t.settings.leadOneDay;
+  return t.settings.leadNDays(days);
 }
 
 function Stepper({
   value,
   onChange,
   disabled,
+  t,
 }: {
   value: number;
   onChange: (n: number) => void;
   disabled: boolean;
+  t: Strings;
 }) {
   const btn = (label: string, delta: number, blocked: boolean) => (
     <Pressable
@@ -41,7 +52,7 @@ function Stepper({
       disabled={disabled || blocked}
       hitSlop={6}
       accessibilityRole="button"
-      accessibilityLabel={delta > 0 ? 'Increase days' : 'Decrease days'}
+      accessibilityLabel={delta > 0 ? t.settings.increaseDays : t.settings.decreaseDays}
       style={({ pressed }) => [
         styles.stepBtn,
         (disabled || blocked) && styles.stepBtnOff,
@@ -79,21 +90,35 @@ export default function SettingsScreen({
   onChange,
 }: Props) {
   const { top, bottom } = useSafeArea();
+  const { locale, override, setOverride, t } = useLocale();
   const on = settings.notificationsEnabled;
 
   const setDays = (kind: EventKind, days: number) =>
     onChange({ ...settings, daysBefore: { ...settings.daysBefore, [kind]: days } });
 
+  const weekdayLabel = (() => {
+    const idx = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ].indexOf(scheduleMeta.regularTrashDay);
+    return idx === -1 ? scheduleMeta.regularTrashDay : t.weekdays[idx];
+  })();
+
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={[styles.screen, { paddingTop: top }]}>
         <View style={styles.bar}>
-          <Text style={styles.barTitle}>Settings</Text>
+          <Text style={styles.barTitle}>{t.settings.title}</Text>
           <Pressable
             onPress={onClose}
             hitSlop={12}
             accessibilityRole="button"
-            accessibilityLabel="Close settings"
+            accessibilityLabel={t.settings.closeA11y}
             style={({ pressed }) => [styles.close, pressed && { backgroundColor: colors.mintDeep }]}
           >
             <CloseIcon size={22} />
@@ -108,10 +133,8 @@ export default function SettingsScreen({
           <View style={styles.card}>
             <View style={styles.switchRow}>
               <View style={{ flex: 1, paddingRight: space(3) }}>
-                <Text style={styles.cardTitle}>Collection reminders</Text>
-                <Text style={styles.cardNote}>
-                  Get a notification before each trash, recycling and bulk pickup.
-                </Text>
+                <Text style={styles.cardTitle}>{t.settings.remindersTitle}</Text>
+                <Text style={styles.cardNote}>{t.settings.remindersNote}</Text>
               </View>
               <Switch
                 value={on}
@@ -124,16 +147,13 @@ export default function SettingsScreen({
 
             {permissionDenied ? (
               <Pressable onPress={() => Linking.openSettings()} style={styles.warning}>
-                <Text style={styles.warningText}>
-                  Notifications are blocked for this app. Tap to open your device settings and
-                  allow them.
-                </Text>
+                <Text style={styles.warningText}>{t.settings.permissionBlocked}</Text>
               </Pressable>
             ) : null}
           </View>
 
           {/* Lead time per collection type */}
-          <Text style={styles.sectionLabel}>When to notify me</Text>
+          <Text style={styles.sectionLabel}>{t.settings.whenToNotify}</Text>
           <View style={styles.card}>
             {ALL_KINDS.map((kind, i) => (
               <View key={kind} style={[styles.leadRow, i > 0 && styles.divider]}>
@@ -142,47 +162,81 @@ export default function SettingsScreen({
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.leadTitle, !on && styles.mutedText]}>
-                    {KIND_LABEL[kind]}
+                    {kindLabel(kind, locale)}
                   </Text>
                   <Text style={[styles.leadValue, !on && styles.mutedText]}>
-                    {leadLabel(settings.daysBefore[kind])}
+                    {leadLabel(settings.daysBefore[kind], t)}
                   </Text>
-                  <Text style={styles.leadHint}>{anchorHint(kind)}</Text>
+                  <Text style={styles.leadHint}>{anchorHint(kind, t)}</Text>
                 </View>
                 <Stepper
                   value={settings.daysBefore[kind]}
                   onChange={(n) => setDays(kind, n)}
                   disabled={!on}
+                  t={t}
                 />
               </View>
             ))}
           </View>
-          <Text style={styles.footnote}>
-            Every reminder arrives at 12:00 noon on the day you choose.
-          </Text>
+          <Text style={styles.footnote}>{t.settings.reminderFootnote}</Text>
+
+          {/* Language */}
+          <Text style={styles.sectionLabel}>{t.settings.language}</Text>
+          <View style={styles.card}>
+            {(
+              [
+                ['system', t.settings.languageSystem],
+                ['en', t.settings.languageEnglish],
+                ['es', t.settings.languageSpanish],
+              ] as [LocaleOverride, string][]
+            ).map(([value, label], i) => (
+              <Pressable
+                key={value}
+                onPress={() => setOverride(value)}
+                style={[styles.langRow, i > 0 && styles.divider]}
+              >
+                <Text style={styles.langLabel}>{label}</Text>
+                <View style={[styles.radio, override === value && styles.radioOn]}>
+                  {override === value ? <View style={styles.radioDot} /> : null}
+                </View>
+              </Pressable>
+            ))}
+          </View>
 
           {/* About */}
-          <Text style={styles.sectionLabel}>About</Text>
+          <Text style={styles.sectionLabel}>{t.settings.about}</Text>
           <View style={styles.card}>
-            <AboutRow label="Regular trash day" value={scheduleMeta.regularTrashDay} />
-            <AboutRow label="Bulk pickup zone" value="Zone 4" divider />
             <AboutRow
-              label="Recycling Web Site"
-              value="Burlington County Recycling"
+              label={t.settings.regularTrashDay}
+              value={weekdayLabel}
+              onPress={() =>
+                Linking.openURL(
+                  'https://evesham-nj.org/government/forms/public-works/documents/972-holiday-trash-and-recycling-schedules/file',
+                )
+              }
+            />
+            <AboutRow
+              label={t.settings.bulkPickupZone}
+              value={zoneLabel(settings.zone, locale)}
+              divider
+              onPress={() =>
+                Linking.openURL('https://evesham-nj.org/public-works-page-list/269-trash-bulk-collection')
+              }
+            />
+            <AboutRow
+              label={t.settings.recyclingWebSite}
+              value={t.settings.recyclingWebSiteValue}
               divider
               onPress={() => Linking.openURL(scheduleMeta.recyclingUrl)}
             />
             <AboutRow
-              label="HOA Portal"
-              value="portal.targetpm.com"
+              label={t.settings.hoaPortal}
+              value={t.settings.hoaPortalValue}
               divider
               onPress={() => Linking.openURL(scheduleMeta.website)}
             />
           </View>
-          <Text style={styles.footnote}>
-            Dates come from the {scheduleMeta.source}. Always defer to the township if the two
-            ever disagree.
-          </Text>
+          <Text style={styles.footnote}>{t.settings.aboutFootnote(scheduleMeta.source)}</Text>
         </ScrollView>
       </View>
     </Modal>
@@ -304,6 +358,25 @@ const styles = StyleSheet.create({
   aboutLabel: { ...typography.small, color: colors.inkSoft },
   aboutValue: { ...typography.small, fontWeight: '600', color: colors.ink, flexShrink: 1 },
   linkValue: { color: colors.teal },
+
+  langRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: space(3),
+  },
+  langLabel: { ...typography.small, fontWeight: '600', color: colors.ink },
+  radio: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioOn: { borderColor: colors.teal },
+  radioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: colors.teal },
 
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line },
   footnote: {

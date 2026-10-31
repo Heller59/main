@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CloseIcon, CouchIcon, RecycleIcon, TrashIcon } from '../icons';
+import { useLocale } from '../i18n/LocaleContext';
 import { fmtLong, relativeLabel } from '../lib/dates';
 import type { CollectionEvent, EventKind } from '../lib/schedule';
 import { colors, radius, shadow, space, typography } from '../theme';
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export default function EventModal({ visible, date, events, onClose }: Props) {
+  const { locale, t } = useLocale();
   // A day with nothing scheduled never opens this, but guard anyway.
   if (!date || events.length === 0) return null;
 
@@ -42,14 +44,14 @@ export default function EventModal({ visible, date, events, onClose }: Props) {
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.date}>{fmtLong(date)}</Text>
-              <Text style={styles.relative}>{relativeLabel(date)}</Text>
+              <Text style={styles.date}>{fmtLong(date, locale)}</Text>
+              <Text style={styles.relative}>{relativeLabel(date, locale)}</Text>
             </View>
             <Pressable
               onPress={onClose}
               hitSlop={12}
               accessibilityRole="button"
-              accessibilityLabel="Close"
+              accessibilityLabel={t.event.close}
               style={({ pressed }) => [styles.close, pressed && { backgroundColor: colors.mintDeep }]}
             >
               <CloseIcon />
