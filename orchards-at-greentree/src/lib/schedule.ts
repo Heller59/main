@@ -115,14 +115,13 @@ export function indexByDate(events: CollectionEvent[]): Map<string, CollectionEv
 }
 
 /** Everything from today onward, in order. */
-export function upcoming(events: CollectionEvent[]): CollectionEvent[] {
-  const t = todayISO();
-  return events.filter((e) => e.markerDate >= t);
+export function upcoming(events: CollectionEvent[], today: string = todayISO()): CollectionEvent[] {
+  return events.filter((e) => e.markerDate >= today);
 }
 
 /** The single next event of each kind. */
-export function nextOfEachKind(events: CollectionEvent[]): CollectionEvent[] {
-  const ahead = upcoming(events);
+export function nextOfEachKind(events: CollectionEvent[], today: string = todayISO()): CollectionEvent[] {
+  const ahead = upcoming(events, today);
   const out: CollectionEvent[] = [];
   for (const kind of ALL_KINDS) {
     const hit = ahead.find((e) => e.kind === kind);
