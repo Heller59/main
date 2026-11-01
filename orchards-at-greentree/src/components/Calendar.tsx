@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { ChevronIcon } from '../icons';
 import { useLocale } from '../i18n/LocaleContext';
-import { fmtMonthYear, toISO, todayISO } from '../lib/dates';
+import { fmtMonthYear, toISO } from '../lib/dates';
 import type { CollectionEvent, EventKind } from '../lib/schedule';
 import { colors, radius, shadow, space, typography } from '../theme';
 import KindBadge from './KindBadge';
@@ -51,10 +51,11 @@ interface Props {
   months: MonthRef[];
   eventsByDate: Map<string, CollectionEvent[]>;
   initialIndex: number;
+  today: string;
   onSelectDate: (iso: string, events: CollectionEvent[]) => void;
 }
 
-export default function Calendar({ months, eventsByDate, initialIndex, onSelectDate }: Props) {
+export default function Calendar({ months, eventsByDate, initialIndex, today, onSelectDate }: Props) {
   const { width } = useWindowDimensions();
   const { locale, t } = useLocale();
   const pageWidth = width - CARD_MARGIN * 2;
@@ -65,7 +66,6 @@ export default function Calendar({ months, eventsByDate, initialIndex, onSelectD
 
   const [index, setIndex] = useState(initialIndex);
   const listRef = useRef<FlatList<MonthRef>>(null);
-  const today = todayISO();
 
   const goTo = useCallback(
     (next: number) => {

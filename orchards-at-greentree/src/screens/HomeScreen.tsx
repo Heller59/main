@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Calendar from '../components/Calendar';
 import EventModal from '../components/EventModal';
 import Header from '../components/Header';
 import UpcomingList from '../components/UpcomingList';
 import { useLocale } from '../i18n/LocaleContext';
+import { todayISO } from '../lib/dates';
 import { useSafeArea } from '../lib/useSafeArea';
 import {
   buildEvents,
@@ -33,13 +34,23 @@ export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedEvents, setSelectedEvents] = useState<CollectionEvent[]>([]);
 
+  // Refreshed whenever the app comes back to the foreground, so "today" can't
+  // go stale if the app is left open (or backgrounded) across midnight.
+  const [today, setToday] = useState(todayISO());
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') setToday(todayISO());
+    });
+    return () => sub.remove();
+  }, []);
+
   // Everything downstream is derived from the JSON plus the chosen zone.
   const events = useMemo(() => buildEvents(settings.zone, locale), [settings.zone, locale]);
   const eventsByDate = useMemo(() => indexByDate(events), [events]);
   const months = useMemo(() => scheduleMonths(events), [events]);
   const startIndex = useMemo(() => initialMonthIndex(months), [months]);
-  const ahead = useMemo(() => upcoming(events), [events]);
-  const next = useMemo(() => nextOfEachKind(events), [events]);
+  const ahead = useMemo(() => upcoming(events, today), [events, today]);
+  const next = useMemo(() => nextOfEachKind(events, today), [events, today]);
 
   // Load saved settings once on launch.
   useEffect(() => {
@@ -108,6 +119,7 @@ export default function HomeScreen() {
             months={months}
             eventsByDate={eventsByDate}
             initialIndex={startIndex}
+            today={today}
             onSelectDate={onSelectDate}
           />
         ) : null}
