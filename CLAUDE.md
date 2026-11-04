@@ -2,9 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Repository layout
+
+This repo holds several independent projects that share nothing at build or run time:
+
+| Path | Project | Stack | README |
+|---|---|---|---|
+| `ChatBotAdmin/`, `ChatBotServer/`, `SampleApplication/` | Mentor Chatbot platform | .NET 9 / .NET 4.8 | `CHATBOT.md` |
+| `orchards-at-greentree/` | The Orchards Trash & Recycling phone app | React Native (Expo SDK 57), iOS + Android | `orchards-at-greentree/README.md` |
+| `DocBot/` | Doc Chatbot homebrew prototype | Python, Ollama, Chroma | `DocBot/README.md` |
+| `docs/` | Static privacy policy and support pages for the phone app's store listings (served by GitHub Pages from `main` `/docs`) | HTML | — |
+
 ## README maintenance
 
-The root `README.md` is just an index linking to each project's own README (`CHATBOT.md` for the ChatBot platform, `orchards-at-greentree/README.md`, `DocBot/README.md`). After any ChatBot code change that affects user-facing behaviour, new capabilities, configuration, architecture, or the embed/deployment workflow, update `CHATBOT.md` to reflect the change. This includes (but is not limited to): new pages or API endpoints, changes to `appsettings.json` keys, changes to the widget embed contract, new rate-limit or kill-switch behaviour, and changes to the processing pipeline.
+The root `README.md` is just an index linking to each project's own README. Keep each project's README current with that project's code:
+
+- **ChatBot**: after any ChatBot code change that affects user-facing behaviour, new capabilities, configuration, architecture, or the embed/deployment workflow, update `CHATBOT.md`. This includes (but is not limited to): new pages or API endpoints, changes to `appsettings.json` keys, changes to the widget embed contract, new rate-limit or kill-switch behaviour, and changes to the processing pipeline.
+- **Phone app**: after any change to the app's user-facing behaviour, the `schedule.json` format or validation rules, settings, localization, the release/version process, build configuration, or project layout, update `orchards-at-greentree/README.md`. If a change affects what data the app stores or sends, or how users get support, also update `docs/privacy-policy.html` / `docs/support.html`.
+
+---
+
+# ChatBot platform
 
 ## Commands
 
@@ -23,7 +41,7 @@ dotnet ef migrations remove --project ChatBotAdmin
 dotnet ef database update --project ChatBotAdmin
 ```
 
-No test projects exist in this repo.
+No .NET test projects exist in this repo.
 
 ## Architecture
 
@@ -90,3 +108,64 @@ Self-contained Shadow DOM widget. Key internals:
 - Extracted images → `ChatBotAdmin/Uploads/images/{botId}/`
 - Bot icon → `ChatBotAdmin/Uploads/images/{botId}/icon{ext}` (always same name, re-upload replaces)
 - Both apps serve `/uploads/*` pointing at this same directory
+
+---
+
+# Orchards phone app (`orchards-at-greentree/`)
+
+Trash, recycling and bulk-pickup calendar with local reminders for the Orchards at Greentree community (Evesham Township, NJ). One Expo/React Native TypeScript codebase builds both the iOS and Android apps. Store name is **The Orchards Trash & Recycling**; bundle ID / package is `com.theorchardstrashrecycling`. The app is deliberately *not* branded as an official HOA app: don't put the HOA name back into the store name or the package ID. The in-app header still shows the community name, read from `schedule.json`.
+
+## Commands
+
+Run all of these from `orchards-at-greentree/`:
+
+```bash
+npm install
+npm start                    # Expo dev server + QR code (Expo Go)
+npm run android / npm run ios  # dev build on a device or simulator (expo run:*)
+npm run typecheck            # tsc --noEmit
+npm run check-schedule       # validate src/data/schedule.json (exits non-zero on errors)
+npm run fix-deps             # expo install --fix: realign deps to the SDK
+npx expo-doctor              # config/dependency health check; keep it at all checks passed
+
+eas build --platform all --profile production   # store builds (.aab / iOS store)
+eas build --platform android --profile apk      # sideloadable test APK
+eas submit --platform all                       # uses submit.production (ascAppId set for iOS)
+```
+
+There's no test runner. Verify changes with `npm run typecheck` and, if the schedule data or its rules changed, `npm run check-schedule`. Run `npx expo-doctor` after changing dependencies or `app.json`.
+
+Scheduled notifications don't reliably fire in Expo Go. Test reminders in a dev build (`npx expo run:android`, or `eas build --profile development` for iOS).
+
+## Architecture
+
+- **Entry**: `index.js` → `App.tsx` (`SafeAreaProvider` → `LocaleProvider` → `ErrorBoundary` → `HomeScreen`). The error boundary shows a readable "schedule could not be loaded" screen when `schedule.json` is invalid.
+- **Data**: `src/data/schedule.json` is the only year-specific file. `src/data/index.ts` imports it, validates it at import time (and throws on bad data), and exports the typed `ScheduleFile`. `src/data/schedule.schema.json` gives editor validation (wired up in `.vscode/settings.json`). `scripts/validate-schedule.js` is a standalone Node validator with stricter checks: duplicates, gaps in the weekly trash run, window ordering, and missing `noteEs` (a warning only). **If you change the schedule format, update all three**: the TS types/validator, the JSON schema, and the Node script.
+- **Events**: `src/lib/schedule.ts` `buildEvents(zone, locale)` turns the JSON into `CollectionEvent`s (`kind`: `trash | recycling | bulk`). Each event has a `markerDate` (the day shown on the calendar) and an `anchorDate` (the day reminders count back from). For bulk, both are `curbsideBy`, the Monday residents may start putting items out, not the day crews arrive.
+- **Dates**: always use `parseISO` / `toISO` / `addDays` / `todayISO` from `src/lib/dates.ts`. `new Date("YYYY-MM-DD")` parses as UTC and shows the previous day in New Jersey. Dates are passed around as ISO `YYYY-MM-DD` strings and compared as strings.
+- **"Today"**: `HomeScreen` keeps `today` in state and refreshes it when `AppState` returns to `active`. Pass that value down (to `Calendar` and to `upcoming` / `nextOfEachKind`); don't call `todayISO()` inside render or memos. Doing that caused the stale-highlight bug when the app stayed open past midnight.
+- **Notifications** (`src/lib/notifications.ts`): `rescheduleAll` cancels everything and rebuilds the queue on every app open and every settings change. It schedules only the soonest 60 reminders (iOS caps an app at 64 pending), at noon local (`REMINDER_HOUR`), N days before `anchorDate`. Android uses the `collections` channel. Triggers are regular `DATE` triggers. **Don't add `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM`**: they were removed on purpose because Google Play restricts them, and noon reminders don't need exact timing.
+- **Settings** (`src/lib/settings.ts`): stored in AsyncStorage under `orchards.settings.v1`. Reminders are on by default, with a lead time of 1 day per kind (allowed range 0–14). The zone is fixed at `3-4`: only the Orchards' bulk zone is in the data, and Settings shows it as a read-only About row. If you add a settings field, merge it with defaults in `loadSettings` so older saved settings still load. Bump the key only for a breaking shape change.
+- **Localization** (`src/i18n/`): English and Spanish. `translations.ts` has parallel `en` / `es` objects typed against one `Strings` interface, so a key missing from either language fails `typecheck`. Components get strings from `useLocale().t`. Non-React code such as `notifications.ts` reads `translations[locale]` directly, with `locale` passed in by the caller. Notification text must be localized too. Holiday notes in `schedule.json` come as `note` / `noteEs` pairs. The language override (System / English / Español) is saved separately from the other settings.
+- **UI**: `screens/HomeScreen.tsx` composes `Header`, `Calendar` (swipeable month grid), `UpcomingList`, and `EventModal`, and drives rescheduling. `SettingsScreen.tsx` holds the reminder, language and About settings. All icons are SVG components in `src/icons/index.tsx` (`react-native-svg`). Colors, spacing and typography come from `src/theme.ts`; use those tokens rather than adding new literal colors. The brand teal is `#527F7A`.
+
+## Config and release gotchas
+
+- `android/` and `ios/` are gitignored and generated by `expo prebuild` / `expo run:*` (Continuous Native Generation). Make native changes through `app.json` and config plugins, never by editing the generated folders.
+- **Dependencies**: use `npx expo install <pkg>` or `npm run fix-deps` so versions match SDK 57. Don't hand-bump Expo packages, and don't list a package in both `dependencies` and `devDependencies` (a duplicate `typescript` entry once broke expo-doctor).
+- **`app.json`**: keep it valid against the current schema. `newArchEnabled` and `android.edgeToEdgeEnabled` are gone (both are mandatory now), and splash screen config belongs in the `expo-splash-screen` plugin, not a top-level `splash` key.
+- **Settings to leave alone**:
+  - `ios.supportsTablet: false`: the app is iPhone-only.
+  - `ITSAppUsesNonExemptEncryption: false`: the export compliance declaration.
+  - R8 minify/shrink via `expo-build-properties`: Google Play requires it from Feb 2027.
+  - `promptToConfigurePushNotifications: false` in `eas.json`.
+  - `appVersionSource: "remote"` with `autoIncrement`: EAS manages build numbers.
+- If a release build crashes and a dev build doesn't, suspect R8 first: check `android/app/build/outputs/mapping/release/mapping.txt`, and add keep rules through `expo-build-properties`.
+- **Yearly update**:
+  1. Replace `schedule.json`.
+  2. Run `npm run check-schedule`.
+  3. Bump `expo.version` in `app.json` (`YYYY.N.0`). iOS `buildNumber` and Android `versionCode` are handled by EAS remote versioning.
+  4. `eas build` + `eas submit`.
+
+  The app README has the full walkthrough.
+- **Secrets**: never commit signing credentials (`credentials.json`, `credentials/`, `*.jks`). They're gitignored.
