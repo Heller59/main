@@ -32,7 +32,7 @@ dotnet build ChatBotAdmin/ChatBotAdmin.csproj
 dotnet build ChatBotServer/ChatBotServer.csproj
 
 # Run (start Admin first — it owns migrations)
-dotnet run --project ChatBotAdmin
+dotnet run --project ChatBotAdmin --urls "http://0.0.0.0:5021"
 dotnet run --project ChatBotServer --urls "http://0.0.0.0:5017"
 
 # EF Core migrations (always run from repo root, always target ChatBotAdmin)

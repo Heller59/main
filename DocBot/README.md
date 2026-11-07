@@ -19,6 +19,11 @@ no AWS/Google account needed for this phase.
 
 ## One-time setup
 
+Install these two command-line tools and make sure both are on your `PATH`:
+
+- [Pandoc](https://pandoc.org/installing.html): converts the `.docx` to Markdown and extracts its images
+- [LibreOffice](https://www.libreoffice.org/download/) (`soffice`): normalizes each `.docx` and converts legacy `.emf`/`.wmf` images to PNG
+
 ```bash
 pip install -r requirements.txt
 

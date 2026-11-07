@@ -117,7 +117,7 @@ No framework dependency — the widget is a self-contained Shadow DOM component 
 
 ```bash
 # Terminal 1 — Admin portal
-dotnet run --project ChatBotAdmin
+dotnet run --project ChatBotAdmin --urls "http://0.0.0.0:5021"
 
 # Terminal 2 — Widget API server
 dotnet run --project ChatBotServer --urls "http://0.0.0.0:5017"

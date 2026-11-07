@@ -13,6 +13,8 @@ A trash, recycling, and bulk collection calendar with reminders, for the Orchard
 at Greentree community in Marlton, NJ. One codebase ships as both a native iOS
 app and a native Android app.
 
+**[▶ Watch the demo video](https://www.youtube.com/watch?v=BKkZ6Y52ivs)**
+
 **[→ Full README](./orchards-at-greentree/README.md)**
 
 ---
@@ -26,6 +28,8 @@ within minutes you have an embeddable chat widget that answers questions using
 only the content of that document. Made up of three projects: `ChatBotAdmin`
 (admin portal), `ChatBotServer` (public widget API), and `SampleApplication`
 (embed demo).
+
+**[▶ Watch the demo video](https://youtu.be/4HTN7YOkLMw)**
 
 **[→ Full README](./CHATBOT.md)**
 
