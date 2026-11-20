@@ -47,6 +47,16 @@
   .step { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #3f6863; }
   @media (prefers-color-scheme: dark) { .step { color: #8fb4a2; } }
   ol.steps p { margin: 0.25rem 0 0.75rem; }
+  ol.steps li.wait {
+    background: #fff4dc;
+    border-color: #e8c372;
+    padding: 0.85rem 1.25rem;
+  }
+  ol.steps li.wait p { margin: 0; color: #5c4300; }
+  @media (prefers-color-scheme: dark) {
+    ol.steps li.wait { background: #2e2716; border-color: #7a6229; }
+    ol.steps li.wait p { color: #f0d9a0; }
+  }
   a.button {
     display: inline-block;
     background: #3f6863;
@@ -83,6 +93,10 @@
       <p>Join the app’s Google Group. Tap <strong>Join group</strong> near the top of the page.</p>
       <a class="button" href="https://groups.google.com/g/the-orchards-trash-recycling" target="_blank" rel="noopener">Open the Google Group</a>
     </li>
+    <li class="wait" role="note">
+      <p><strong>⚠️ Wait 30 minutes before step 2.</strong> Google takes a while to register your
+      group membership. If you go on too soon, Google Play will say the app isn’t available to you.</p>
+    </li>
     <li>
       <span class="step">Step 2</span>
       <p>Switch back to this tab, then tap <strong>Become a tester</strong> on the Google Play page.</p>
@@ -97,8 +111,8 @@
 
   <h2>If something doesn’t work</h2>
   <ul>
-    <li><strong>“App not available” in step 2 or 3.</strong> Wait a few minutes after joining
-    the group, then try again. Make sure you’re signed in with the same Google account you
+    <li><strong>“App not available” in step 2 or 3.</strong> Google can take up to
+    30 minutes to recognize that you joined the group. Wait a bit longer, then try again. Make sure you’re signed in with the same Google account you
     used to join.</li>
     <li><strong>More than one Google account?</strong> In the Play Store, tap your profile
     picture and switch to the account that joined the group.</li>
