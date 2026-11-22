@@ -2,7 +2,7 @@
   "expo": {
     "name": "The Orchards Trash & Recycling",
     "slug": "orchards-hoa",
-    "version": "2026.1.0",
+    "version": "2026.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "orchardshoa",
@@ -52,6 +52,7 @@
         }
       ],
       "expo-localization",
+      "./plugins/withOptionalPortrait",
       [
         "expo-splash-screen",
         {
