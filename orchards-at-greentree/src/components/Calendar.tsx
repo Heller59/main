@@ -20,6 +20,8 @@ import KindBadge from './KindBadge';
 const CARD_MARGIN = space(4);
 const GRID_PAD = space(2);
 const CELL_ASPECT = 1.18;
+// Day pill (26) + marker row (22) + paddings: below this, narrow phones clip the icons.
+const CELL_MIN_HEIGHT = 58;
 const DOW_ROW_HEIGHT = 20;
 
 type MonthRef = { year: number; month: number };
@@ -60,6 +62,7 @@ export default function Calendar({ months, eventsByDate, initialIndex, today, on
   const { locale, t } = useLocale();
   const pageWidth = width - CARD_MARGIN * 2;
   const cellWidth = (pageWidth - GRID_PAD * 2) / 7;
+  const cellHeight = Math.max(cellWidth * CELL_ASPECT, CELL_MIN_HEIGHT);
   // Badges share the cell width: roomy for one or two, tighter when three collide.
   const badgeSizeFor = (count: number) =>
     Math.min(22, Math.floor((cellWidth - 2) / Math.max(2, count)) - 2);
@@ -97,71 +100,77 @@ export default function Calendar({ months, eventsByDate, initialIndex, today, on
   const renderMonth = useCallback(
     ({ item }: ListRenderItemInfo<MonthRef>) => {
       const cells = buildCells(item.year, item.month);
+      const weeks: Cell[][] = [];
+      for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
       return (
         <View style={{ width: pageWidth, paddingHorizontal: GRID_PAD }}>
           <View style={styles.dowRow}>
             {t.calendar.dow.map((d, i) => (
-              <View key={i} style={{ width: cellWidth }}>
+              <View key={i} style={styles.col}>
                 <Text style={styles.dowText}>{d}</Text>
               </View>
             ))}
           </View>
 
-          <View style={styles.grid}>
-            {cells.map((cell) => {
-              const dayEvents = cell.inMonth ? eventsByDate.get(cell.iso) ?? [] : [];
-              const hasEvents = dayEvents.length > 0;
-              const isToday = cell.iso === today;
+          {weeks.map((week) => (
+            <View key={week[0].iso} style={styles.week}>
+              {week.map((cell) => {
+                const dayEvents = cell.inMonth ? (eventsByDate.get(cell.iso) ?? []) : [];
+                const hasEvents = dayEvents.length > 0;
+                const isToday = cell.iso === today;
 
-              return (
-                <Pressable
-                  key={cell.iso}
-                  disabled={!hasEvents}
-                  onPress={() => onSelectDate(cell.iso, dayEvents)}
-                  android_ripple={hasEvents ? { color: colors.mintDeep, borderless: true } : undefined}
-                  accessibilityRole={hasEvents ? 'button' : undefined}
-                  accessibilityLabel={
-                    hasEvents
-                      ? `${cell.day}, ${dayEvents.map((e) => e.title).join(', ')}`
-                      : undefined
-                  }
-                  style={({ pressed }) => [
-                    styles.cell,
-                    { width: cellWidth, height: cellWidth * CELL_ASPECT },
-                    pressed && hasEvents && styles.cellPressed,
-                  ]}
-                >
-                  <View style={[styles.dayPill, isToday && styles.dayPillToday]}>
-                    <Text
-                      style={[
-                        styles.dayText,
-                        !cell.inMonth && styles.dayTextMuted,
-                        isToday && styles.dayTextToday,
-                      ]}
-                    >
-                      {cell.day}
-                    </Text>
-                  </View>
+                return (
+                  <Pressable
+                    key={cell.iso}
+                    disabled={!hasEvents}
+                    onPress={() => onSelectDate(cell.iso, dayEvents)}
+                    android_ripple={
+                      hasEvents ? { color: colors.mintDeep, borderless: true } : undefined
+                    }
+                    accessibilityRole={hasEvents ? 'button' : undefined}
+                    accessibilityLabel={
+                      hasEvents
+                        ? `${cell.day}, ${dayEvents.map((e) => e.title).join(', ')}`
+                        : undefined
+                    }
+                    style={({ pressed }) => [
+                      styles.cell,
+                      { height: cellHeight },
+                      pressed && hasEvents && styles.cellPressed,
+                    ]}
+                  >
+                    <View style={[styles.dayPill, isToday && styles.dayPillToday]}>
+                      <Text
+                        style={[
+                          styles.dayText,
+                          !cell.inMonth && styles.dayTextMuted,
+                          isToday && styles.dayTextToday,
+                        ]}
+                      >
+                        {cell.day}
+                      </Text>
+                    </View>
 
-                  <View style={styles.markerRow}>
-                    {dayEvents.slice(0, 3).map((e) => (
-                      <View key={e.id} style={styles.marker}>
-                        <KindBadge
-                          kind={e.kind}
-                          size={badgeSizeFor(Math.min(dayEvents.length, 3))}
-                          glyphRatio={0.68}
-                        />
-                      </View>
-                    ))}
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
+                    <View style={styles.markerRow}>
+                      {dayEvents.slice(0, 3).map((e) => (
+                        <View key={e.id} style={styles.marker}>
+                          <KindBadge
+                            kind={e.kind}
+                            size={badgeSizeFor(Math.min(dayEvents.length, 3))}
+                            glyphRatio={0.68}
+                          />
+                        </View>
+                      ))}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ))}
         </View>
       );
     },
-    [cellWidth, eventsByDate, onSelectDate, pageWidth, today, t],
+    [cellHeight, cellWidth, eventsByDate, onSelectDate, pageWidth, today, t],
   );
 
   const current = months[index] ?? months[0];
@@ -170,7 +179,7 @@ export default function Calendar({ months, eventsByDate, initialIndex, today, on
   // neighbour would leave a blank row under a 5-week month. Pin the height
   // to the month on screen instead.
   const weeks = current ? buildCells(current.year, current.month).length / 7 : 6;
-  const listHeight = DOW_ROW_HEIGHT + weeks * cellWidth * CELL_ASPECT;
+  const listHeight = DOW_ROW_HEIGHT + weeks * cellHeight;
 
   return (
     <View style={styles.card}>
@@ -281,8 +290,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.5,
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  // One row per week with flex columns: fixed fractional widths in a single
+  // wrapping grid rounded past the row width on some densities (Pixel 9) and
+  // pushed Saturday onto the next line.
+  week: { flexDirection: 'row' },
+  col: { flex: 1, minWidth: 0 },
   cell: {
+    flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: space(1),
@@ -311,8 +327,10 @@ const styles = StyleSheet.create({
   marker: { marginHorizontal: 1 },
   legend: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: space(5),
+    columnGap: space(4),
+    rowGap: space(2),
     paddingTop: space(3),
     marginTop: space(1),
     marginHorizontal: space(4),
