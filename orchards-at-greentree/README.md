@@ -123,6 +123,13 @@ crashes but a dev build doesn't, that's the first thing to suspect — check
 `android/app/build/outputs/mapping/release/mapping.txt` (bundled automatically into
 the `.aab`, no manual Play Console upload needed) before assuming it's a logic bug.
 
+The app is locked to portrait (`"orientation": "portrait"`), which makes Android
+infer a required `android.hardware.screen.portrait` feature. Google Play flags that
+as restricting availability on tablets, Chromebooks and XR devices.
+`plugins/withOptionalPortrait.js` (listed in the `app.json` plugins) declares the
+feature with `android:required="false"`, so the app stays portrait-only but remains
+installable everywhere. Keep it if you change orientation settings.
+
 ---
 
 ## The schedule file
@@ -245,6 +252,7 @@ App.tsx                      root, safe-area provider, error boundary
 index.js                     Expo entry point
 app.json                     name, icons, permissions, store version
 scripts/validate-schedule.js the pre-ship data check
+plugins/withOptionalPortrait.js  marks the portrait-screen feature optional (see below)
 
 src/
   data/
