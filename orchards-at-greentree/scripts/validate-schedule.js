@@ -37,6 +37,16 @@ function readFile() {
   }
 }
 
+function inRange(date, data) {
+  const y = Number(date.slice(0, 4));
+  return y >= (data.startYear ?? data.year) && y <= data.year;
+}
+
+function yearsLabel(data) {
+  const start = data.startYear ?? data.year;
+  return start === data.year ? `year ${data.year}` : `years ${start}-${data.year}`;
+}
+
 function checkList(data, key) {
   const list = data[key];
   if (!Array.isArray(list) || list.length === 0) {
@@ -51,8 +61,8 @@ function checkList(data, key) {
     }
     const d = parseISO(entry.date);
     if (Number.isNaN(d.getTime())) err(`${key}[${i}]: ${entry.date} is not a real date`);
-    if (Number(entry.date.slice(0, 4)) !== data.year) {
-      err(`${key}[${i}]: ${entry.date} is not in year ${data.year}`);
+    if (!inRange(entry.date, data)) {
+      err(`${key}[${i}]: ${entry.date} is not in ${yearsLabel(data)}`);
     }
     if (seen.has(entry.date)) err(`${key}: ${entry.date} appears more than once`);
     seen.add(entry.date);
@@ -74,6 +84,11 @@ for (const field of ['year', 'community', 'township', 'regularTrashDay']) {
   if (data[field] === undefined || data[field] === '') err(`"${field}" is required`);
 }
 if (typeof data.year !== 'number') err('"year" must be a number, not a string');
+if (data.startYear !== undefined) {
+  if (typeof data.startYear !== 'number') err('"startYear" must be a number, not a string');
+  else if (data.startYear > data.year) err('"startYear" must not be later than "year"');
+}
+const yearCount = data.year - (data.startYear ?? data.year) + 1;
 
 const trash = checkList(data, 'trash');
 const recycling = checkList(data, 'recycling');
@@ -123,22 +138,24 @@ if (!Array.isArray(data.bulk) || data.bulk.length === 0) {
     if (b.windowStart < b.curbsideBy) {
       err(`bulk[${i}]: windowStart ${b.windowStart} is before curbsideBy ${b.curbsideBy}`);
     }
-    if (Number(b.curbsideBy.slice(0, 4)) !== data.year) {
-      err(`bulk[${i}]: ${b.curbsideBy} is not in year ${data.year}`);
+    if (!inRange(b.curbsideBy, data)) {
+      err(`bulk[${i}]: ${b.curbsideBy} is not in ${yearsLabel(data)}`);
     }
   });
 
   const zones = [...new Set(data.bulk.map((b) => b.zones))];
   zones.forEach((z) => {
     const n = data.bulk.filter((b) => b.zones === z).length;
-    if (n !== 4) warn(`zone ${z} has ${n} bulk windows — the township normally runs 4 per year`);
+    if (n !== 4 * yearCount) {
+      warn(`zone ${z} has ${n} bulk windows for ${yearCount} year(s) — the township normally runs 4 per year`);
+    }
   });
   console.log(`Zones found: ${zones.join(', ')}`);
 }
 
 // Report
 console.log(
-  `\n${data.community || 'schedule'} ${data.year}: ` +
+  `\n${data.community || 'schedule'} ${yearsLabel(data)}: ` +
     `${trash.length} trash, ${recycling.length} recycling, ` +
     `${(data.bulk || []).length} bulk windows`,
 );

@@ -105,7 +105,7 @@ export default function HomeScreen() {
     <View style={styles.root}>
       <Header
         community={scheduleMeta.community}
-        subtitle={t.home.headerSubtitle(scheduleMeta.township, scheduleMeta.year)}
+        subtitle={t.home.headerSubtitle(scheduleMeta.township, scheduleMeta.yearLabel)}
         notificationsOn={settings.notificationsEnabled && !permissionDenied}
         onOpenSettings={() => setSettingsOpen(true)}
       />

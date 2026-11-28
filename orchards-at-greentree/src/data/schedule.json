@@ -1,9 +1,10 @@
 {
-  "year": 2026,
+  "year": 2027,
+  "startYear": 2026,
   "community": "Orchards at Greentree",
   "township": "Evesham Township, NJ",
   "website": "https://portal.targetpm.com/",
-  "source": "Evesham Township 2026 Holiday Trash, Recycling & Bulk Collection Schedules",
+  "source": "Evesham Township 2026 and 2027 Holiday Trash, Recycling & Bulk Collection Schedules",
   "regularTrashDay": "Thursday",
   "setOutHour": 18,
   "recyclingUrl": "https://www.burlingtoncountynj.gov/345/Recycling",
@@ -184,6 +185,180 @@
     },
     {
       "date": "2026-12-31"
+    },
+    {
+      "date": "2027-01-07"
+    },
+    {
+      "date": "2027-01-14"
+    },
+    {
+      "date": "2027-01-22",
+      "note": "Moved to Friday for Martin Luther King Jr. Day",
+      "noteEs": "Trasladado al viernes por el Día de Martin Luther King Jr."
+    },
+    {
+      "date": "2027-01-28"
+    },
+    {
+      "date": "2027-02-04"
+    },
+    {
+      "date": "2027-02-11"
+    },
+    {
+      "date": "2027-02-19",
+      "note": "Moved to Friday for Presidents' Day",
+      "noteEs": "Trasladado al viernes por el Día de los Presidentes"
+    },
+    {
+      "date": "2027-02-25"
+    },
+    {
+      "date": "2027-03-04"
+    },
+    {
+      "date": "2027-03-11"
+    },
+    {
+      "date": "2027-03-18"
+    },
+    {
+      "date": "2027-03-25"
+    },
+    {
+      "date": "2027-04-02",
+      "note": "Moved to Friday for Easter Monday",
+      "noteEs": "Trasladado al viernes por el Lunes de Pascua"
+    },
+    {
+      "date": "2027-04-08"
+    },
+    {
+      "date": "2027-04-15"
+    },
+    {
+      "date": "2027-04-22"
+    },
+    {
+      "date": "2027-04-29"
+    },
+    {
+      "date": "2027-05-06"
+    },
+    {
+      "date": "2027-05-13"
+    },
+    {
+      "date": "2027-05-20"
+    },
+    {
+      "date": "2027-05-27"
+    },
+    {
+      "date": "2027-06-04",
+      "note": "Moved to Friday for Memorial Day",
+      "noteEs": "Trasladado al viernes por el Día de los Caídos"
+    },
+    {
+      "date": "2027-06-10"
+    },
+    {
+      "date": "2027-06-17"
+    },
+    {
+      "date": "2027-06-24"
+    },
+    {
+      "date": "2027-07-01"
+    },
+    {
+      "date": "2027-07-09",
+      "note": "Moved to Friday for Independence Day (observed)",
+      "noteEs": "Trasladado al viernes por el Día de la Independencia (observado)"
+    },
+    {
+      "date": "2027-07-15"
+    },
+    {
+      "date": "2027-07-22"
+    },
+    {
+      "date": "2027-07-29"
+    },
+    {
+      "date": "2027-08-05"
+    },
+    {
+      "date": "2027-08-12"
+    },
+    {
+      "date": "2027-08-19"
+    },
+    {
+      "date": "2027-08-26"
+    },
+    {
+      "date": "2027-09-02"
+    },
+    {
+      "date": "2027-09-10",
+      "note": "Moved to Friday for Labor Day",
+      "noteEs": "Trasladado al viernes por el Día del Trabajo"
+    },
+    {
+      "date": "2027-09-16"
+    },
+    {
+      "date": "2027-09-23"
+    },
+    {
+      "date": "2027-09-30"
+    },
+    {
+      "date": "2027-10-07"
+    },
+    {
+      "date": "2027-10-15",
+      "note": "Moved to Friday for Columbus Day",
+      "noteEs": "Trasladado al viernes por el Día de la Raza"
+    },
+    {
+      "date": "2027-10-21"
+    },
+    {
+      "date": "2027-10-28"
+    },
+    {
+      "date": "2027-11-04"
+    },
+    {
+      "date": "2027-11-12",
+      "note": "Moved to Friday for Veterans Day",
+      "noteEs": "Trasladado al viernes por el Día de los Veteranos"
+    },
+    {
+      "date": "2027-11-18"
+    },
+    {
+      "date": "2027-11-27",
+      "note": "Moved to Saturday for Thanksgiving",
+      "noteEs": "Trasladado al sábado por el Día de Acción de Gracias"
+    },
+    {
+      "date": "2027-12-02"
+    },
+    {
+      "date": "2027-12-09"
+    },
+    {
+      "date": "2027-12-16"
+    },
+    {
+      "date": "2027-12-23"
+    },
+    {
+      "date": "2027-12-30"
     }
   ],
   "recycling": [
@@ -272,6 +447,88 @@
       "date": "2026-12-26",
       "note": "Saturday pickup (Christmas week)",
       "noteEs": "Recolección el sábado (semana de Navidad)"
+    },
+    {
+      "date": "2027-01-08"
+    },
+    {
+      "date": "2027-01-22"
+    },
+    {
+      "date": "2027-02-05"
+    },
+    {
+      "date": "2027-02-19"
+    },
+    {
+      "date": "2027-03-05"
+    },
+    {
+      "date": "2027-03-19"
+    },
+    {
+      "date": "2027-04-02"
+    },
+    {
+      "date": "2027-04-16"
+    },
+    {
+      "date": "2027-04-30"
+    },
+    {
+      "date": "2027-05-14"
+    },
+    {
+      "date": "2027-05-28"
+    },
+    {
+      "date": "2027-06-11"
+    },
+    {
+      "date": "2027-06-25"
+    },
+    {
+      "date": "2027-07-09"
+    },
+    {
+      "date": "2027-07-23"
+    },
+    {
+      "date": "2027-08-06"
+    },
+    {
+      "date": "2027-08-20"
+    },
+    {
+      "date": "2027-09-03"
+    },
+    {
+      "date": "2027-09-17"
+    },
+    {
+      "date": "2027-10-01"
+    },
+    {
+      "date": "2027-10-15"
+    },
+    {
+      "date": "2027-10-29"
+    },
+    {
+      "date": "2027-11-12"
+    },
+    {
+      "date": "2027-11-27",
+      "note": "Saturday pickup (Thanksgiving week)",
+      "noteEs": "Recolección el sábado (semana de Acción de Gracias)"
+    },
+    {
+      "date": "2027-12-10"
+    },
+    {
+      "date": "2027-12-24",
+      "note": "Collected on Christmas Day (observed) as scheduled",
+      "noteEs": "Se recolecta el día de Navidad (observado) según lo programado"
     }
   ],
   "bulk": [
@@ -298,6 +555,30 @@
       "curbsideBy": "2026-10-12",
       "windowStart": "2026-10-13",
       "windowEnd": "2026-10-16"
+    },
+    {
+      "zones": "3-4",
+      "curbsideBy": "2027-01-11",
+      "windowStart": "2027-01-11",
+      "windowEnd": "2027-01-15"
+    },
+    {
+      "zones": "3-4",
+      "curbsideBy": "2027-04-12",
+      "windowStart": "2027-04-12",
+      "windowEnd": "2027-04-16"
+    },
+    {
+      "zones": "3-4",
+      "curbsideBy": "2027-07-12",
+      "windowStart": "2027-07-12",
+      "windowEnd": "2027-07-16"
+    },
+    {
+      "zones": "3-4",
+      "curbsideBy": "2027-10-11",
+      "windowStart": "2027-10-12",
+      "windowEnd": "2027-10-15"
     }
   ]
 }

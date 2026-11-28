@@ -65,11 +65,19 @@ wired up.
 
 This is the whole job. When the township publishes next year's schedule:
 
-### 1. Replace one file
+### 1. Add the new year to one file
 
-Overwrite `src/data/schedule.json`. Nothing else in the codebase references a
-specific year — the year, the community name, the zones and every date are read
+Edit `src/data/schedule.json`. Nothing else in the codebase references a
+specific year — the years, the community name, the zones and every date are read
 from this file.
+
+The township publishes the next year's schedule in late fall, while the current
+year still has weeks left. So the file can hold two consecutive years at once:
+`startYear` is the earliest year in the file and `year` is the latest. Append the
+new year's trash, recycling and bulk entries, set `year` to the new year and
+`startYear` to the old one, and update `source`. While both are present the header
+reads "2026-2027 schedule". The following fall, delete the oldest year's entries
+and move `startYear` forward (or drop it once the file holds a single year).
 
 ### 2. Check it
 
@@ -78,14 +86,14 @@ npm run check-schedule
 ```
 
 This validates the file without needing the app to run. It catches malformed dates,
-dates in the wrong year, duplicates, bulk `curbsideBy` values that aren't Mondays,
+dates outside `startYear`-`year`, duplicates, bulk `curbsideBy` values that aren't Mondays,
 windows that end before they start, and gaps in the weekly trash run. It exits
 non-zero on any error, so you can gate a release on it.
 
 ```
 Zones found: 3-4
 
-Orchards at Greentree 2027: 52 trash, 26 recycling, 4 bulk windows
+Orchards at Greentree years 2026-2027: 105 trash, 52 recycling, 8 bulk windows
 
 Schedule looks good. Safe to ship.
 ```
@@ -136,11 +144,12 @@ installable everywhere. Keep it if you change orientation settings.
 
 ```jsonc
 {
-  "year": 2026,
+  "year": 2027,          // the latest year in the file
+  "startYear": 2026,     // optional: the earliest year, when the file holds two
   "community": "Orchards at Greentree",
   "township": "Evesham Township, NJ",
   "website": "https://portal.targetpm.com/",
-  "source": "Evesham Township 2026 Holiday Trash, Recycling & Bulk Collection Schedules",
+  "source": "Evesham Township 2026 and 2027 Holiday Trash, Recycling & Bulk Collection Schedules",
   "regularTrashDay": "Thursday",
   "setOutHour": 18,
   "recyclingUrl": "https://www.burlingtoncountynj.gov/345/Recycling",
@@ -180,7 +189,7 @@ A few things worth knowing:
 
 - **Trash dates are absolute, not computed.** The township's holiday table shifts the
   Thursday route to Friday (and once to Saturday, for Thanksgiving). Rather than
-  encode holiday rules, every one of the 53 dates is listed outright. Nothing to
+  encode holiday rules, every date is listed outright. Nothing to
   re-derive, nothing to get subtly wrong.
 - **`curbsideBy` must be a Monday.** The township's rule is "curbside by 6 AM on the
   Monday of the designated week," which is not always the first collection day — in
