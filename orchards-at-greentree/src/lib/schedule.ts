@@ -30,6 +30,11 @@ const KIND_ORDER: Record<EventKind, number> = { trash: 0, recycling: 1, bulk: 2 
 
 export const scheduleMeta = {
   year: raw.year,
+  /** "2027", or "2026-2027" while the file still carries the previous year. */
+  yearLabel:
+    raw.startYear !== undefined && raw.startYear < raw.year
+      ? `${raw.startYear}-${raw.year}`
+      : String(raw.year),
   community: raw.community,
   township: raw.township,
   website: raw.website,

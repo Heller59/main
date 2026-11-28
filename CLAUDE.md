@@ -162,7 +162,7 @@ Scheduled notifications don't reliably fire in Expo Go. Test reminders in a dev 
   - `appVersionSource: "remote"` with `autoIncrement`: EAS manages build numbers.
 - If a release build crashes and a dev build doesn't, suspect R8 first: check `android/app/build/outputs/mapping/release/mapping.txt`, and add keep rules through `expo-build-properties`.
 - **Yearly update**:
-  1. Replace `schedule.json`.
+  1. Add the new year to `schedule.json` (it can hold two years: set `year` to the new one, `startYear` to the old one; drop the oldest year the following fall).
   2. Run `npm run check-schedule`.
   3. Bump `expo.version` in `app.json` (`YYYY.N.0`). iOS `buildNumber` and Android `versionCode` are handled by EAS remote versioning.
   4. `eas build` + `eas submit`.

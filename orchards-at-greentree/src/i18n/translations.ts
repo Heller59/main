@@ -36,7 +36,7 @@ export interface Strings {
     emptyState: string;
   };
   home: {
-    headerSubtitle: (township: string, year: number) => string;
+    headerSubtitle: (township: string, year: string) => string;
     credit: (source: string) => string;
     remindersOnA11y: string;
     remindersOffA11y: string;

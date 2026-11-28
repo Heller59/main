@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Collection schedule",
-  "description": "One year of trash, recycling and bulk collection dates. Replace this file each year.",
+  "description": "Trash, recycling and bulk collection dates for one or more consecutive years (startYear through year).",
   "type": "object",
   "required": [
     "year",
@@ -17,7 +17,14 @@
     "year": {
       "type": "integer",
       "minimum": 2020,
-      "maximum": 2100
+      "maximum": 2100,
+      "description": "The latest year in the file."
+    },
+    "startYear": {
+      "type": "integer",
+      "minimum": 2020,
+      "maximum": 2100,
+      "description": "The earliest year in the file, when it holds more than one year. Defaults to year."
     },
     "community": {
       "type": "string",

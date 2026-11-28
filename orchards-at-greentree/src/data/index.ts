@@ -24,7 +24,10 @@ export interface BulkWindow {
 }
 
 export interface ScheduleFile {
+  /** The latest year the file covers. */
   year: number;
+  /** The earliest year the file covers, when it holds more than one. Defaults to `year`. */
+  startYear?: number;
   community: string;
   township: string;
   website: string;
@@ -46,22 +49,35 @@ function fail(message: string): never {
   );
 }
 
-function checkDates(list: DatedEntry[], label: string, year: number) {
+function inRange(date: string, data: ScheduleFile): boolean {
+  const y = Number(date.slice(0, 4));
+  return y >= (data.startYear ?? data.year) && y <= data.year;
+}
+
+function yearsLabel(data: ScheduleFile): string {
+  const start = data.startYear ?? data.year;
+  return start === data.year ? `year ${data.year}` : `years ${start}-${data.year}`;
+}
+
+function checkDates(list: DatedEntry[], label: string, data: ScheduleFile) {
   if (!Array.isArray(list) || list.length === 0) fail(`"${label}" is missing or empty`);
   list.forEach((entry, i) => {
     if (!entry || !ISO_DATE.test(entry.date)) {
       fail(`${label}[${i}] needs a date formatted YYYY-MM-DD`);
     }
-    if (Number(entry.date.slice(0, 4)) !== year) {
-      fail(`${label}[${i}] (${entry.date}) is not in year ${year}`);
+    if (!inRange(entry.date, data)) {
+      fail(`${label}[${i}] (${entry.date}) is not in ${yearsLabel(data)}`);
     }
   });
 }
 
 function validate(data: ScheduleFile): ScheduleFile {
   if (typeof data.year !== 'number') fail('"year" must be a number');
-  checkDates(data.trash, 'trash', data.year);
-  checkDates(data.recycling, 'recycling', data.year);
+  if (data.startYear !== undefined && (typeof data.startYear !== 'number' || data.startYear > data.year)) {
+    fail('"startYear" must be a number no later than "year"');
+  }
+  checkDates(data.trash, 'trash', data);
+  checkDates(data.recycling, 'recycling', data);
 
   if (!Array.isArray(data.bulk) || data.bulk.length === 0) fail('"bulk" is missing or empty');
   data.bulk.forEach((b, i) => {
